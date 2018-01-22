@@ -5,42 +5,41 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1F.h"
-#include "Wave.hh"
+#include "TH2F.h"
+#include "Event.hh"
+#include "Fragment.hh"
 using namespace std;
-struct item{
-  long long TS;
-  vector<Wave*> waves;
-};
+
 class SortHits{
  public:
   SortHits();
   SortHits(TFile *out);
   void SetRootFile(TFile *out);
-  bool Add(item* addme);
-  bool FullList(item* addme);
-  bool Insert(item* insertme);
-  void WriteFile(item* writeme);
+  bool Add(Fragment* addme);
+  bool FullList(Fragment* addme);
+  bool Insert(Fragment* insertme);
+  void WriteFragment(Fragment* writeme);
+  void CloseEvent();
   void PrintList();
   void Flush();
   void Status();
   void SetMemDepth(int memdepth){fmemdepth = memdepth;}
+  void SetWindow(int window){fwindow = window;}
+  void SetVerbose(int vl){fvl = vl;}
  private:
-  list<item*> flist;
+  list<Fragment*> flist;
+  Event* fevent;
+  int ffragnr;
   int fevtnr;
   int fdiscarded;
   TFile *frootfile;
   int fmemdepth;
-  long long flastts;
+  int fwindow;
+  int fvl;
   TTree *ftr;
   long long fts;
-  TH1F* fhtdiff;
+  TH1F* fhTSdiff;
+  TH2F* fhfragTS;
+  TH2F* fheventTS;
 };
-
-class TSComparer {
-public:
-  bool operator() ( item *lhs, item *rhs) {
-    return (*rhs).TS < (*lhs).TS;
-  }
-};
-
 #endif

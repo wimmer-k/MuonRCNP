@@ -10,6 +10,8 @@
 #include "TEnv.h"
 #include "Wave.hh"
 #include "CommandLineInterface.hh"
+#include "SortHits.hh"
+#include "ProcessHits.hh"
 #include "defaults.h"
 
 using namespace std;
@@ -21,8 +23,9 @@ int main(int argc, char *argv[]){
   double time_start = get_time();
   signal(SIGINT,signalhandler);
   int runnr = 0;
-  int lastbuffer = 2;
+  int lastbuffer = -1;
   int vl = 0;
+  int memdepth = 1000;
   char* setfile = NULL;
   //Read in the command line arguments
   CommandLineInterface* interface = new CommandLineInterface();
@@ -30,6 +33,7 @@ int main(int argc, char *argv[]){
   interface->Add("-r", "run number", &runnr);
   interface->Add("-v", "verbose level", &vl);
   interface->Add("-s", "settings file", &setfile);
+  interface->Add("-m", "memory depth for timestamp sorting", &memdepth);
   interface->CheckFlags(argc, argv);
 
   if(runnr<1){
@@ -58,15 +62,23 @@ int main(int argc, char *argv[]){
   cout << "output file:  " << Form("%s/run%04d.root",baseroot,runnr) << endl;
 
 
-  Wave* wave = new Wave();
-  TTree *tr = new TTree("tr","waveforms");
-  tr->Branch("wave",&wave,320000);
-  //tr->BranchRef();
+  ProcessHits* analyzer = new ProcessHits(setfile);
+  
+  SortHits* sort = new SortHits(rootout);
+  sort->SetVerbose(vl);
+  sort->SetMemDepth(memdepth);
+  // Wave* wave = new Wave();
+  // TTree *tr = new TTree("tr","waveforms");
+  // tr->Branch("wave",&wave,320000);
+  // //tr->BranchRef();
   
   uint32_t id;
   int header[8];
   rawin->read( (char *)&id, sizeof(int) );
-  for(int i=0;i<lastbuffer;i++){
+  int ctr=0;
+  unsigned int tswraps[NBOARDS]={0};
+  long long int lastTSboard[NBOARDS]={0};
+  while(!rawin->eof()){
     if(vl>0)
       cout << "id = "<< id  <<"\t" << (hex) << id  << (dec)<< endl;
     //check if we are at the end of the file
@@ -84,15 +96,29 @@ int main(int argc, char *argv[]){
 	if(vl>1)
 	  cout << "header["<<h<<"] = " << header[h] << endl;
       }
-      header[0] = header[0]&0x7fffffff; // TimeStamp has 31 bit
+      long long int TS = header[0]&0x7fffffff; // TimeStamp has 31 bit
+      int eventNR = header[4];
+      int boardNR = header[7];
+      int chanNR = header[3];
       if(vl>0){
-	cout << "timestamp " << header[0];
-	cout << "\tn event " << header[4];
-	cout << "\tboard number " << header[7];
-	cout << "\tchannel " << header[3] << endl;
+	cout << "timestamp " << TS;
+	cout << "\tn event " << eventNR;
+	cout << "\tboard number " << boardNR;
+	cout << "\tchannel " << chanNR << endl;
       }
+      //check for timestamp jumps
+      if(TS < lastTSboard[boardNR]){
+	cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboard[boardNR]<< endl;
+	tswraps[boardNR]++;
+	//cout << (long long int)pow(2,31)<<" * " << tswraps[boardNR] <<" = "<<(long long int)pow(2,31)*tswraps[boardNR] << endl;
+      }
+      //correct for wrapping of time stamps
+      TS += (long long int)pow(2,31)*tswraps[boardNR];
+      //remember the last time stamp of this board
+      lastTSboard[boardNR] = header[0]&0x7fffffff;
       
-      wave = new Wave(header[0],header[4],header[7],header[3]);
+      //initialyze the wave
+      Wave* wave = new Wave(TS,eventNR,boardNR,chanNR);
       uint32_t ww;
       int isample =0;
       vector<short> waveform;
@@ -112,12 +138,20 @@ int main(int argc, char *argv[]){
       wave->SetWave(waveform);
 #endif
       //analyze wave here
-      tr->Fill();
+      analyzer->AnalyzeWave(wave);
+      
+      sort->Add(wave);
+      //tr->Fill();
     }//waveform
+    ctr++;
+    if(lastbuffer > 0 && ctr >= lastbuffer)
+      break;
   }//buffers
-  rootout->cd();
-  tr->Write("",TObject::kOverwrite);
+
+  sort->Flush();
   rootout->Close();
+
+  return 1;
 }
 void signalhandler(int sig){
   if (sig == SIGINT){

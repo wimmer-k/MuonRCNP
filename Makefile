@@ -16,7 +16,7 @@ CFLAGS		= -pedantic -Wall -Wno-long-long -g -O3 $(ROOTCFLAGS) -fPIC --std=c++11
 
 INCLUDES        = -I./inc -I$(COMMON_DIR)
 BASELIBS 	= -lm $(ROOTLIBS) $(ROOTGLIBS) -L$(LIB_DIR)
-ALLIBS  	=  $(BASELIBS) -lCommandLineInterface -lWave
+ALLIBS  	=  $(BASELIBS) -lCommandLineInterface -lSeamine
 LIBS 		= $(ALLIBS)
 LFLAGS		= -g -fPIC -shared
 
@@ -28,28 +28,23 @@ CFLAGS += -Wl,--no-as-needed
 LFLAGS += -Wl,--no-as-needed
 CFLAGS += -Wno-unused-variable -Wno-write-strings
 
-LIB_O_FILES = build/Wave.o build/WaveDictionary.o
-O_FILES = build/Wave.o 
+LIB_O_FILES = build/Event.o build/Wave.o build/Fragment.o build/Dictionary.o
+O_FILES = build/SortHits.o build/ProcessHits.o
 
 USING_ROOT_6 = $(shell expr $(shell root-config --version | cut -f1 -d.) \>= 6)
 ifeq ($(USING_ROOT_6),1)
-	EXTRAS=lib/WaveDictionary_rdict.pcm
+	EXTRAS=lib/Dictionary_rdict.pcm
 endif
 
 SRCS = $(wildcard *.cc)
 PROG = $(patsubst %.cc,%,$(SRCS)) 
 all: $(PROG) $(EXTRAS)
 
-%:	%.cc $(LIB_DIR)/libWave.so 
+EventBuild: EventBuild.cc $(LIB_DIR)/libSeamine.so $(O_FILES)
 	@echo "Compiling $@"
-	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
+	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) $(O_FILES) -o $(BIN_DIR)/$@
 
-#%:	%.cc $(O_FILES)
-#	@echo "Compiling $@"
-##	$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) $(O_FILES) -o $(BIN_DIR)/$@
-#	$(CPP) $(CFLAGS) $(INCLUDES) $^ $(LIBS) -o $(BIN_DIR)/$@
-
-$(LIB_DIR)/libWave.so: $(LIB_O_FILES) 
+$(LIB_DIR)/libSeamine.so: $(LIB_O_FILES) 
 	@echo "Making $@"
 	@$(CPP) $(LFLAGS) -o $@ $^ -lc
 
@@ -58,21 +53,21 @@ build/%.o: src/%.cc inc/%.hh
 	@mkdir -p $(dir $@)
 	@$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@ 
 
-build/WaveDictionary.o: build/WaveDictionary.cc
+build/Dictionary.o: build/Dictionary.cc
 	@echo "Compiling $@"
 	@mkdir -p $(dir $@)
 	@$(CPP) $(CFLAGS) $(INCLUDES) -fPIC -c $< -o $@
 
-build/WaveDictionary.cc: inc/Wave.hh inc/WaveLinkDef.h
+build/Dictionary.cc: inc/Event.hh inc/Wave.hh inc/Fragment.hh inc/LinkDef.h
 	@echo "Building $@"
 	@mkdir -p build
 	@rootcint -f $@ -c $(INCLUDES) $(ROOTCFLAGS) $(SWITCH) $(notdir $^)
 
-build/WaveDictionary_rdict.pcm: build/WaveDictionary.cc
+build/Dictionary_rdict.pcm: build/Dictionary.cc
 	@echo "Confirming $@"
 	@touch $@
 
-lib/WaveDictionary_rdict.pcm: build/WaveDictionary_rdict.pcm | lib
+lib/Dictionary_rdict.pcm: build/Dictionary_rdict.pcm | lib
 	@echo "Placing $@"
 	@cp $< $@
 
