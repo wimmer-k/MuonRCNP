@@ -44,6 +44,10 @@ EventBuild: EventBuild.cc $(LIB_DIR)/libSeamine.so $(O_FILES)
 	@echo "Compiling $@"
 	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) $(O_FILES) -o $(BIN_DIR)/$@
 
+Histos: Histos.cc $(LIB_DIR)/libSeamine.so 
+	@echo "Compiling $@"
+	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
+
 $(LIB_DIR)/libSeamine.so: $(LIB_O_FILES) 
 	@echo "Making $@"
 	@$(CPP) $(LFLAGS) -o $@ $^ -lc
@@ -73,6 +77,8 @@ lib/Dictionary_rdict.pcm: build/Dictionary_rdict.pcm | lib
 
 clean:
 	@echo "Cleaning up"
-	@rm -f $(BIN_DIR)/$(PROG)
+	@for P in $(PROG); do \
+	 rm -rf $(BIN_DIR)/$$P ; \
+	done
 	@rm -rf build doc
 	@rm -f inc/*~ src/*~ scripts/*~ *~

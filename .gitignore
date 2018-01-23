@@ -2,6 +2,8 @@
 common/
 lib/
 root/
+hist/
+plots/
 scripts/FitWindow/
 scripts/rootlogon.C
 scripts/viewWave_C.d

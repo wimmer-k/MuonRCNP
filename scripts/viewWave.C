@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include "TFile.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -7,9 +8,51 @@
 #include "TAxis.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/defaults.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/Event.hh"
-char * ffilename = (char*)"/home/daq/work/seamine2018_daq/kathrin/root/run0018.root";
+char * ffilename = (char*)"/home/daq/work/seamine2018_daq/kathrin/root/run0010.root";
 void SetFile(char* filename){
   ffilename = filename;
+}
+void ViewBaF(int nstart, double thresh = 200, int nevents=9){
+  TCanvas *c = new TCanvas("c","c",1200,600);
+  c->Divide(3,3);
+  TFile *f = new TFile(ffilename);
+  TTree* tr = (TTree*)f->Get("tr");
+  Event* evt = new Event();
+  tr->SetBranchAddress("event",&evt);
+  Wave *w;
+  int data[MAXSAMPLES];
+  int x[MAXSAMPLES];
+  vector<TGraph*> gv;
+  for(int n=nstart;n<nstart+nevents;n++){
+    Int_t status = tr->GetEvent(n);
+    cout << "event = " << n << endl;
+    //cout << "event length " << evt->GetLength() << endl;
+    for(int i=0; i<evt->GetLength(); i++){
+      w = evt->GetWave(i);
+      if(w->GetBoard()!=NBAFBOARD)
+	continue;
+      int ch = w->GetCh();
+      if(ch<BAFCHSTA || ch >=BAFCHSTA+NBAFS)
+	continue;
+      if(w->GetMaxPH()<thresh)
+	continue;
+      cout << "board: " <<w->GetBoard() <<", ch: " << w->GetCh() << ", PH: " << w->GetMaxPH()<< endl;
+      int data[MAXSAMPLES];
+      int x[MAXSAMPLES];
+      TGraph* g;
+      int length = w->GetWave().size();
+      for(int i=0;i<length;i++){
+	x[i] = i;
+	data[i] = (int)w->GetWave()[i];
+	//cout << x[i] << "\t" << data[i] << endl;
+      }
+      c->cd(n-nstart+1);
+      g = new TGraph(length,x,data);
+      g->SetTitle(Form("BaF wave event %d, channel %d, pusle %f",n,ch,w->GetMaxPH()));
+      gv.push_back(g);
+      gv.back()->Draw("AL");
+    }//event length
+  }//events
 }
 void ViewWave(int n, int board, int ch){
   TCanvas *c = new TCanvas("c","c",1200,600);  

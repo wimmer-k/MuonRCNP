@@ -8,16 +8,12 @@
 #include "TTree.h"
 #include "TROOT.h"
 #include "TEnv.h"
-#include "Wave.hh"
 #include "CommandLineInterface.hh"
 #include "SortHits.hh"
 #include "ProcessHits.hh"
 #include "defaults.h"
 
 using namespace std;
-bool signal_received = false;
-void signalhandler(int sig);
-double get_time();
 
 int main(int argc, char *argv[]){
   double time_start = get_time();
@@ -55,10 +51,11 @@ int main(int argc, char *argv[]){
       fixed_baseline[b][c] = baselines->GetValue(Form("Board%d.Channel%d",b,c),16384);
     }
   }
-  
-  ifstream *rawin = new ifstream(Form("%s/run%04d.dat",baseraw,runnr), ios::in | ios::binary);
+
+  int disk = runnr%3;
+  ifstream *rawin = new ifstream(Form("%s%02d%s%02d/run%04d.dat",baseraw[0],disk,baseraw[1],disk,runnr), ios::in | ios::binary);
   TFile *rootout = new TFile(Form("%s/run%04d.root",baseroot,runnr), "RECREATE");
-  cout << "reading file: " << Form("%s/run%04d.dat",baseraw,runnr) << endl;
+  cout << "reading file: " << Form("%s%02d%s%02d/run%04d.dat",baseraw[0],disk,baseraw[1],disk,runnr) << endl;
   cout << "output file:  " << Form("%s/run%04d.root",baseroot,runnr) << endl;
 
 
@@ -67,10 +64,6 @@ int main(int argc, char *argv[]){
   SortHits* sort = new SortHits(rootout);
   sort->SetVerbose(vl);
   sort->SetMemDepth(memdepth);
-  // Wave* wave = new Wave();
-  // TTree *tr = new TTree("tr","waveforms");
-  // tr->Branch("wave",&wave,320000);
-  // //tr->BranchRef();
   
   uint32_t id;
   int header[8];
@@ -83,6 +76,9 @@ int main(int argc, char *argv[]){
   long long int lastTSboard[NBOARDS]={0};
   long long int firstTS = 0;
   while(!rawin->eof()){
+   if(signal_received){
+      break;
+    }
     if(buffers % 1000 == 0){
       double time_end = get_time();
       cout << "\r" << buffers << " buffers read... "<<bytes_read/(1024*1024)<<" MB... "<<buffers/(time_end - time_start) << " buffers/s" << flush;
@@ -142,7 +138,7 @@ int main(int argc, char *argv[]){
 	rawin->read( (char *)&ww, sizeof(int) );
 	bytes_read += sizeof(int);
 	//cout << "ww = "<< ww  <<"\t" << (hex) << ww  << (dec)<< endl;
-	if(ww==ID_WAVE || ww==ID_GE){
+	if(ww==ID_WAVE || ww==ID_PHA){
 	  id = ww;
 	  break;
 	}
@@ -160,10 +156,10 @@ int main(int argc, char *argv[]){
       Fragment *frag = wave;
       sort->Add(frag);
     }//waveform
-    // else if(id==ID_PHA){
-    //   if(vl>0)
-    // 	cout << "Ge " <<endl;
-    // }
+    else if(id==ID_PHA){
+      if(vl>1)
+    	cout << "Ge " <<endl;
+    }
     buffers++;
     if(lastbuffer > 0 && buffers >= lastbuffer)
       break;
@@ -179,16 +175,4 @@ int main(int argc, char *argv[]){
   cout << "Program Run time: " << time_end - time_start << " s." << endl;
   cout << "Unpacked " << buffers/(time_end - time_start) << " buffers/s." << endl;
   return 1;
-}
-void signalhandler(int sig){
-  if (sig == SIGINT){
-    signal_received = true;
-  }
-}
-
-double get_time(){
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    double d = t.tv_sec + (double) t.tv_usec/1000000;
-    return d;
 }
