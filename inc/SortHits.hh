@@ -1,5 +1,5 @@
-#ifndef __SORTHITS_H 
-#define __SORTHITS_H
+#ifndef __SORTHITS_HH 
+#define __SORTHITS_HH
 #include <iostream>
 #include <list>
 #include "TFile.h"
@@ -26,7 +26,9 @@ class SortHits{
   void SetMemDepth(int memdepth){fmemdepth = memdepth;}
   void SetWindow(int window){fwindow = window;}
   void SetVerbose(int vl){fvl = vl;}
- private:
+  TTree* GetTree(){return ftr;}
+  long long int GetLastTS(){return fevent->GetLastTS();}
+private:
   list<Fragment*> flist;
   Event* fevent;
   int ffragnr;
@@ -37,7 +39,6 @@ class SortHits{
   int fwindow;
   int fvl;
   TTree *ftr;
-  long long fts;
   TH1F* fhTSdiff;
   TH2F* fhfragTS;
   TH2F* fheventTS;

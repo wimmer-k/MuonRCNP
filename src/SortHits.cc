@@ -170,7 +170,7 @@ void SortHits::Flush(){
   }
 }
 void SortHits::Status(){
-  cout << "Status of SortHits:" << endl;
+  cout << "\nStatus of SortHits:" << endl;
   cout << "Event memory depth: " << fmemdepth << endl;
   cout << "Fragments processed:   " << ffragnr << endl;
   cout << "Events built:   " << fevtnr << endl;

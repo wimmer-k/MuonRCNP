@@ -1,5 +1,5 @@
-#ifndef __PROCESSHITS_H 
-#define __PROCESSHITS_H
+#ifndef __PROCESSHITS_HH 
+#define __PROCESSHITS_HH
 #include <iostream>
 #include "TEnv.h"
 #include "Wave.hh"
@@ -13,5 +13,6 @@ class ProcessHits{
   void SetVerbose(int vl){fvl = vl;}
  private:
   int fvl;
+  int fsamplesforbaseline;
 };
 #endif

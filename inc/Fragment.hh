@@ -50,6 +50,17 @@ public:
   int GetBoard(){ return fboard;}
   //! returns the channel number
   int GetCh(){ return fch;}
+  //! prints the fragment information
+  void Print(){
+    cout << "TS = " << fTS;
+    if(fID==0)
+      cout << ", wave form";
+    else if (fID==1)
+      cout << ", germanium";     
+    cout << " data, event # " << fnevent;
+    cout << ", board " << fboard;
+    cout << ", channel " << fch << endl;
+  }
   
 protected:
   //! the timestamp

@@ -41,16 +41,16 @@ int main(int argc, char *argv[]){
     return 99;
   }
   if(setfile==NULL){
-    cout <<"no settings file, using default.dat" << endl;
+    cout <<"no settings file, using defaultset.dat" << endl;
     setfile = "./defaultset.dat";
   }
   //read settings file
   TEnv* set = new TEnv(setfile);
   //read constant fixed baselines
-  short fixed_baseline[2][16];
+  short fixed_baseline[NBOARDS][16];
   cout << "baseline settings " << set->GetValue("Baselines","./set/baseline.dat") << endl;
   TEnv* baselines = new TEnv(set->GetValue("Baselines","./set/baseline.dat"));
-  for(int b=0;b<2;b++){
+  for(int b=0;b<NBOARDS;b++){
     for(int c=0;c<16;c++){
       fixed_baseline[b][c] = baselines->GetValue(Form("Board%d.Channel%d",b,c),16384);
     }
@@ -74,11 +74,23 @@ int main(int argc, char *argv[]){
   
   uint32_t id;
   int header[8];
+  long long int bytes_read = 0;
   rawin->read( (char *)&id, sizeof(int) );
-  int ctr=0;
+  bytes_read += sizeof(int);
+  int buffers=0;
+  
   unsigned int tswraps[NBOARDS]={0};
   long long int lastTSboard[NBOARDS]={0};
+  long long int firstTS = 0;
   while(!rawin->eof()){
+    if(buffers % 1000 == 0){
+      double time_end = get_time();
+      cout << "\r" << buffers << " buffers read... "<<bytes_read/(1024*1024)<<" MB... "<<buffers/(time_end - time_start) << " buffers/s" << flush;
+      if(buffers % 10000 == 0){
+	sort->GetTree()->AutoSave();
+      }
+    }
+    
     if(vl>0)
       cout << "id = "<< id  <<"\t" << (hex) << id  << (dec)<< endl;
     //check if we are at the end of the file
@@ -93,6 +105,7 @@ int main(int argc, char *argv[]){
       // 8 header words
       for(int h=0;h<8;h++){
 	rawin->read( (char *)&header[h], sizeof(int) );
+	bytes_read += sizeof(int);  
 	if(vl>1)
 	  cout << "header["<<h<<"] = " << header[h] << endl;
       }
@@ -108,15 +121,18 @@ int main(int argc, char *argv[]){
       }
       //check for timestamp jumps
       if(TS < lastTSboard[boardNR]){
-	cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboard[boardNR]<< endl;
+	if(vl>0)
+	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboard[boardNR]<< endl;
+	//count the number of time stamp wraps
 	tswraps[boardNR]++;
-	//cout << (long long int)pow(2,31)<<" * " << tswraps[boardNR] <<" = "<<(long long int)pow(2,31)*tswraps[boardNR] << endl;
       }
       //correct for wrapping of time stamps
       TS += (long long int)pow(2,31)*tswraps[boardNR];
       //remember the last time stamp of this board
       lastTSboard[boardNR] = header[0]&0x7fffffff;
-      
+      //remember first timestamp
+      if(firstTS ==0)
+	firstTS = TS;
       //initialyze the wave
       Wave* wave = new Wave(TS,eventNR,boardNR,chanNR);
       uint32_t ww;
@@ -124,33 +140,44 @@ int main(int argc, char *argv[]){
       vector<short> waveform;
       while(!rawin->eof() && isample<MAXSAMPLES){
 	rawin->read( (char *)&ww, sizeof(int) );
+	bytes_read += sizeof(int);
 	//cout << "ww = "<< ww  <<"\t" << (hex) << ww  << (dec)<< endl;
 	if(ww==ID_WAVE || ww==ID_GE){
 	  id = ww;
 	  break;
 	}
 	// order of waveform samples 1 0, 3 2, ...
-	waveform.push_back( (ww&0x0000ffff)        - fixed_baseline[header[7]][header[3]]);
-	waveform.push_back(((ww&0xffff0000) >> 16) - fixed_baseline[header[7]][header[3]]);
+	waveform.push_back( (ww&0x0000ffff)        - fixed_baseline[boardNR][chanNR]);
+	waveform.push_back(((ww&0xffff0000) >> 16) - fixed_baseline[boardNR][chanNR]);
 	isample++;
       }
-#ifdef WRITE_WAVE
       wave->SetWave(waveform);
-#endif
+
       //analyze wave here
       analyzer->AnalyzeWave(wave);
-      
-      sort->Add(wave);
-      //tr->Fill();
+      if(vl>1)
+	wave->Print();
+      Fragment *frag = wave;
+      sort->Add(frag);
     }//waveform
-    ctr++;
-    if(lastbuffer > 0 && ctr >= lastbuffer)
+    // else if(id==ID_PHA){
+    //   if(vl>0)
+    // 	cout << "Ge " <<endl;
+    // }
+    buffers++;
+    if(lastbuffer > 0 && buffers >= lastbuffer)
       break;
   }//buffers
 
   sort->Flush();
+  cout << "------------------------------------" << endl;
+  cout << "Total of " << buffers << " data buffers ("<<bytes_read/(1024*1024)<<" MB) read." << endl;
+  cout << sort->GetTree()->GetEntries() << " entries written to tree ("<<sort->GetTree()->GetZipBytes()/(1024*1024)<<" MB)"<< endl;
+  cout << "First time-stamp: " <<  firstTS << ", last time-stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*8e-9 << " seconds." << endl;
   rootout->Close();
-
+  double time_end = get_time();
+  cout << "Program Run time: " << time_end - time_start << " s." << endl;
+  cout << "Unpacked " << buffers/(time_end - time_start) << " buffers/s." << endl;
   return 1;
 }
 void signalhandler(int sig){
