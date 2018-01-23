@@ -17,10 +17,10 @@ SortHits::SortHits(TFile *out){
   ftr->Branch("event",&fevent,320000);
 
   fhTSdiff = new TH1F("hTSdiff","hTSdiff",1000,0,100000);
-  //fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,1000,0,1e12);
-  //fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,1000,0,1e12);
-  fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,3000,0,1e10);
-  fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,3000,0,1e10);
+  fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,1000,0,1e12);
+  fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,1000,0,1e12);
+  //fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,3000,0,1e10);
+  //fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,3000,0,1e10);
   //fhfragTS = new TH2F("hfragTS","hfragTS",2500,0,250000,3000,0,1.5e9);
   //fheventTS = new TH2F("heventTS","heventTS",1100,0,6600,3000,0,1.5e9);
   fevtnr =0;
@@ -32,8 +32,9 @@ SortHits::SortHits(TFile *out){
 void SortHits::SetRootFile(TFile *out){
   frootfile = out;
   ftr = new TTree("tr","events");
+  ftr->SetDirectory(out);
   fevent = new Event();
-  ftr->Branch("event",&fevent,320000);
+  ftr->Branch("event",&fevent);
   
   fhTSdiff = new TH1F("hTSdiff","hTSdiff",1000,0,100000);
   fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,1000,0,1e12);
@@ -125,7 +126,7 @@ void SortHits::WriteFragment(Fragment* writeme){
   }
   else{
     //close fevent and write
-    if(fvl>1)
+    if(fvl>0)
       cout << "outside the window" << endl;
     CloseEvent();
     fevent->Add(writeme);
@@ -133,7 +134,7 @@ void SortHits::WriteFragment(Fragment* writeme){
 }
 
 void SortHits::CloseEvent(){
-  if(fvl>1){
+  if(fvl>0){
     cout << __PRETTY_FUNCTION__ << endl;
     fevent->PrintEvent();
   }
@@ -145,12 +146,12 @@ void SortHits::CloseEvent(){
   fevtnr++;
 }
 void SortHits::Flush(){
-  if(fvl>1)
+  if(fvl>0)
     cout << __PRETTY_FUNCTION__ << endl;
   CloseEvent();
   list<Fragment*>::iterator it = flist.begin();
   int ctr = 0;
-  if(fvl>0)
+  if(fvl>1)
     PrintList();
   while(it != flist.end()){
     if(fvl>1)
@@ -163,7 +164,7 @@ void SortHits::Flush(){
   if(frootfile){
     cout << "writing tree to root file" << endl;
     frootfile->cd();
-    ftr->Write();
+    ftr->Write("",TObject::kOverwrite);
     fhTSdiff->Write();
     fhfragTS->Write();
     fheventTS->Write();

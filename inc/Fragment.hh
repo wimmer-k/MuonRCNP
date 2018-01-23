@@ -19,7 +19,7 @@ public:
     Clear();
   }
   //! constructor with the header information
-  Fragment(int id, long long int ts, int nevent, int board, int ch){
+  Fragment(int id, unsigned long long int ts, int nevent, int board, int ch){
     Clear();
     fID = id;
     fTS = ts;
@@ -41,7 +41,7 @@ public:
   
   //getter
   //! returns the timestamp
-  long long int GetTS(){ return fTS;}
+  unsigned long long int GetTS(){ return fTS;}
   //! returns the id, 0 for waveform, 1 for Ge
   int GetID(){ return fID;}
   //! returns the event number
@@ -64,7 +64,7 @@ public:
   
 protected:
   //! the timestamp
-  long long int fTS;
+  unsigned long long int fTS;
   //! the ID, 0 for waveform, 1 for Ge
   int fID;
   //! the internal event number

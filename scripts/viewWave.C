@@ -6,7 +6,7 @@
 #include "TGraph.h"
 #include "TSystem.h"
 #include "TAxis.h"
-#include "/home/daq/work/seamine2018_daq/kathrin/inc/defaults.h"
+#include "/home/daq/work/seamine2018_daq/kathrin/inc/globaldefs.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/Event.hh"
 char * ffilename = (char*)"/home/daq/work/seamine2018_daq/kathrin/root/run0010.root";
 void SetFile(char* filename){
@@ -26,8 +26,8 @@ void ViewBaF(int nstart, double thresh = 200, int nevents=9){
   for(int n=nstart;n<nstart+nevents;n++){
     Int_t status = tr->GetEvent(n);
     cout << "event = " << n << endl;
-    //cout << "event length " << evt->GetLength() << endl;
-    for(int i=0; i<evt->GetLength(); i++){
+    //cout << "event wave length " << evt->GetWaveLength() << endl;
+    for(int i=0; i<evt->GetWaveLength(); i++){
       w = evt->GetWave(i);
       if(w->GetBoard()!=NBAFBOARD)
 	continue;
@@ -62,8 +62,8 @@ void ViewWave(int n, int board, int ch){
   tr->SetBranchAddress("event",&evt);
   Int_t status = tr->GetEvent(n);
   Wave *w;
-  //cout << "event length " << evt->GetLength() << endl;
-  for(int i=0; i<evt->GetLength(); i++){
+  //cout << "event wave length " << evt->GetWaveLength() << endl;
+  for(int i=0; i<evt->GetWaveLength(); i++){
     w = evt->GetWave(i);
     //cout << w->GetBoard() <<"\t" << w->GetCh() << endl;
     if(w->GetBoard()==board && w->GetCh()==ch)
@@ -96,8 +96,8 @@ void ViewWave(int n, int board){
   int data[MAXSAMPLES];
   int x[MAXSAMPLES];
   vector<TGraph*> gv;
-  //cout << "event length " << evt->GetLength() << endl;
-  for(int i=0; i<evt->GetLength(); i++){
+  //cout << "event wave length " << evt->GetWaveLength() << endl;
+  for(int i=0; i<evt->GetWaveLength(); i++){
     w = evt->GetWave(i);
     //cout << w->GetBoard() <<"\t" << w->GetCh() << endl;
     if(w->GetBoard()!=board)

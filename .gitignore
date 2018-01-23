@@ -9,5 +9,8 @@ scripts/rootlogon.C
 scripts/viewWave_C.d
 scripts/viewWave_C.so
 scripts/viewWave_C_ACLiC_dict_rdict.pcm
+scripts/Calibrate_C.d
+scripts/Calibrate_C.so
+scripts/Calibrate_C_ACLiC_dict_rdict.pcm
 setup
 status

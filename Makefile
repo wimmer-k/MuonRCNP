@@ -28,7 +28,7 @@ CFLAGS += -Wl,--no-as-needed
 LFLAGS += -Wl,--no-as-needed
 CFLAGS += -Wno-unused-variable -Wno-write-strings
 
-LIB_O_FILES = build/Event.o build/Wave.o build/Fragment.o build/Dictionary.o
+LIB_O_FILES = build/Event.o build/PHA.o build/Wave.o build/Fragment.o build/Dictionary.o
 O_FILES = build/SortHits.o build/ProcessHits.o
 
 USING_ROOT_6 = $(shell expr $(shell root-config --version | cut -f1 -d.) \>= 6)
@@ -62,7 +62,7 @@ build/Dictionary.o: build/Dictionary.cc
 	@mkdir -p $(dir $@)
 	@$(CPP) $(CFLAGS) $(INCLUDES) -fPIC -c $< -o $@
 
-build/Dictionary.cc: inc/Event.hh inc/Wave.hh inc/Fragment.hh inc/LinkDef.h
+build/Dictionary.cc: inc/Event.hh inc/Wave.hh inc/PHA.hh inc/Fragment.hh inc/LinkDef.h
 	@echo "Building $@"
 	@mkdir -p build
 	@rootcint -f $@ -c $(INCLUDES) $(ROOTCFLAGS) $(SWITCH) $(notdir $^)
@@ -75,6 +75,8 @@ lib/Dictionary_rdict.pcm: build/Dictionary_rdict.pcm | lib
 	@echo "Placing $@"
 	@cp $< $@
 
+doc:	doxyconf
+	doxygen doxyconf
 clean:
 	@echo "Cleaning up"
 	@for P in $(PROG); do \

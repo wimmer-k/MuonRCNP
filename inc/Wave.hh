@@ -52,7 +52,7 @@ public:
   double GetMaxPH(){ return fmaxPH;}
   //! returns the time at which the maximum pulse height occured
   short GetMaxPHTime(){ return fmaxPHtime;}
-
+  //! print the fragment information
   void Print(){
     Fragment::Print();
     cout << "baseline = " << fbaseline;
@@ -60,11 +60,13 @@ public:
     cout << ", at time " << fmaxPHtime << endl;
   }
 protected:
-
+  //! the baseline, derived from the first samples
   double fbaseline;
+  //! the maximum of the pulse height (converted to positive)
   double fmaxPH;
+  //! the timing of the maximum pulse height
   short fmaxPHtime;
-  
+  //! the wave form, only written to file if selected (switch in Makefile need to recompile everything)
 #ifdef WRITE_WAVE
   vector <short> fwave;
 #else

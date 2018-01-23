@@ -12,7 +12,8 @@
 #include "TList.h"
 #include "Event.hh"
 #include "CommandLineInterface.hh"
-#include "defaults.h"
+#include "util.h"
+#include "globaldefs.h"
 
 using namespace std;
 
@@ -64,17 +65,26 @@ int main(int argc, char *argv[]){
   cout << endl;
   cout << "creating histograms" << endl;
   TList *hlist = new TList();
+  //BaF detectors
   TH1F *hBaF_PH[NBAFS];
-  TH2F *hBaF_PH_sum = new TH2F("hBaF_PH_sum","BaF max. pulse height summary",NBAFS,0,NBAFS,2000,0,2000);hlist->Add(hBaF_PH_sum);
-  TH2F *hBaF_TMAX_sum = new TH2F("hBaF_TMAX_sum","BaF Time at max. pulse height summary",NBAFS,0,NBAFS,2000,0,2000);hlist->Add(hBaF_TMAX_sum);
+  TH2F *hBaF_PH_sum = new TH2F("hBaF_PH_sum", "BaF max. pulse height summary", NBAFS,0,NBAFS, 2000,0,2000); hlist->Add(hBaF_PH_sum);
+  TH2F *hBaF_TMAX_sum = new TH2F("hBaF_TMAX_sum", "BaF Time at max. pulse height summary", NBAFS,0,NBAFS, 2000,0,2000); hlist->Add(hBaF_TMAX_sum);
   for(int i=0;i<NBAFS;i++){
-    hBaF_PH[i] = new TH1F(Form("hBaF_PH_%d",i),Form("BaF[%d] max. pulse height",i),2000,0,2000);hlist->Add(hBaF_PH[i]);
+    hBaF_PH[i] = new TH1F(Form("hBaF_PH_%d",i), Form("BaF[%d] max. pulse height",i), 2000,0,2000); hlist->Add(hBaF_PH[i]);
   }
+  //Ge detectors
+  TH1F *hGe_cal[NGES];
+  TH2F *hGe_raw_sum = new TH2F("hGe_raw_sum", "Ge raw pulse height summary", NGES,0,NGES, 2000,0,2000); hlist->Add(hGe_raw_sum);
+  TH2F *hGe_cal_sum = new TH2F("hGe_cal_sum", "Ge calibrated energy summary", NGES,0,NGES, 4000,0,4000); hlist->Add(hGe_cal_sum);
+  for(int i=0;i<NGES;i++){
+    hGe_cal[i] = new TH1F(Form("hGe_cal_%d",i), Form("Ge[%d] calibrated energy",i), 4000,0,4000); hlist->Add(hGe_cal[i]);
+  }
+
   
   Int_t nbytes = 0;
   Int_t status;
   Wave *w;
-
+  PHA *p;
   for(int i=0; i<nentries;i++){
     if(signal_received){
       break;
@@ -95,12 +105,13 @@ int main(int argc, char *argv[]){
     }
     nbytes += status;
     //histogram filling here
-    for(int j=0; j<evt->GetLength(); j++){
+    //BaF data
+    for(int j=0; j<evt->GetWaveLength(); j++){
       w = evt->GetWave(j);
       int bd = w->GetBoard();
       int ch = w->GetCh();
 
-      if(bd==NBAFBOARD && ch>=BAFCHSTA && ch <BAFCHSTA+NBAFS){//BaFs
+      if(bd==NBAFBOARD && ch>=BAFCHSTA && ch<BAFCHSTA+NBAFS){//BaFs
 	//cout << "board: " << bd <<", ch: " << ch << ", PH: " << w->GetMaxPH()<< endl;
 	double maxPH = w->GetMaxPH();
 	hBaF_PH[ch-BAFCHSTA]->Fill(maxPH);
@@ -109,8 +120,19 @@ int main(int argc, char *argv[]){
 	  hBaF_TMAX_sum->Fill(ch-BAFCHSTA,w->GetMaxPHTime());
       }
     }
-
-    if(i%1000 == 0){
+    for(int j=0; j<evt->GetPHALength(); j++){
+      p = evt->GetPHA(j);
+      int bd = p->GetBoard();
+      int ch = p->GetCh(); 
+      if(bd==NGEBOARD && ch<NGES){//BaFs
+	double raw = p->GetRaw();
+	double en = p->GetEn();
+	hGe_cal[ch]->Fill(en);
+	hGe_cal_sum->Fill(ch,en);
+	hGe_raw_sum->Fill(ch,raw);
+      }
+    }
+    if(i%10000 == 0){
       double time_end = get_time();
       cout << setw(5) << setiosflags(ios::fixed) << setprecision(1) << (100.*i)/nentries <<
 	" % done\t" << (Float_t)i/(time_end - time_start) << " events/s " << 

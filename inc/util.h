@@ -1,17 +1,7 @@
-char* baseraw[2] = {"/data","/RCNP1801_"};
-char* baseroot = "./root";
-
-const uint32_t ID_WAVE=0xffffffff;
-const uint32_t ID_PHA =0xefefefef;
-
-const int MAXSAMPLES = 2000;
-const int NBOARDS = 4;
-
-const int NBAFBOARD = 0;
-const int NBAFS = 7;
-const int BAFCHSTA = 4;
-const int BAFCHEND = 10;
-
+#ifndef __UTIL_HH
+#define __UTIL_HH
+#include <signal.h>
+#include <sys/time.h>
 
 bool signal_received = false;
 void signalhandler(int sig);
@@ -29,3 +19,4 @@ double get_time(){
     double d = t.tv_sec + (double) t.tv_usec/1000000;
     return d;
 }
+#endif

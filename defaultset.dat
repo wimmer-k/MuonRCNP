@@ -1,2 +1,6 @@
 Baselines:		/home/daq/work/seamine2018_daq/kathrin/set/baseline.dat
 Samples.Baseline:	10
+Ge.0.Gain:                               0.759131
+Ge.0.Offset:                             1.29125
+Ge.1.Gain:                               0.750078
+Ge.1.Offset:                             -0.54655

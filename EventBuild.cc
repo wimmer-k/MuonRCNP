@@ -2,8 +2,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm> 
-#include <signal.h>
-#include <sys/time.h>
 #include "TFile.h"
 #include "TTree.h"
 #include "TROOT.h"
@@ -11,7 +9,8 @@
 #include "CommandLineInterface.hh"
 #include "SortHits.hh"
 #include "ProcessHits.hh"
-#include "defaults.h"
+#include "util.h"
+#include "globaldefs.h"
 
 using namespace std;
 
@@ -53,28 +52,30 @@ int main(int argc, char *argv[]){
   }
 
   int disk = runnr%3;
-  ifstream *rawin = new ifstream(Form("%s%02d%s%02d/run%04d.dat",baseraw[0],disk,baseraw[1],disk,runnr), ios::in | ios::binary);
+  ifstream *rawin = new ifstream(Form("%s%02d%s%02d/run%04d.dat",baseraw0,disk,baseraw1,disk,runnr), ios::in | ios::binary);
   TFile *rootout = new TFile(Form("%s/run%04d.root",baseroot,runnr), "RECREATE");
-  cout << "reading file: " << Form("%s%02d%s%02d/run%04d.dat",baseraw[0],disk,baseraw[1],disk,runnr) << endl;
+  cout << "reading file: " << Form("%s%02d%s%02d/run%04d.dat",baseraw0,disk,baseraw1,disk,runnr) << endl;
   cout << "output file:  " << Form("%s/run%04d.root",baseroot,runnr) << endl;
 
 
   ProcessHits* analyzer = new ProcessHits(setfile);
+  analyzer->SetVerbose(vl);
   
   SortHits* sort = new SortHits(rootout);
   sort->SetVerbose(vl);
   sort->SetMemDepth(memdepth);
-  
+  sort->SetWindow(2000);
   uint32_t id;
   int header[8];
+  uint32_t ww;
   long long int bytes_read = 0;
   rawin->read( (char *)&id, sizeof(int) );
   bytes_read += sizeof(int);
   int buffers=0;
   
   unsigned int tswraps[NBOARDS]={0};
-  long long int lastTSboard[NBOARDS]={0};
-  long long int firstTS = 0;
+  unsigned long long int lastTSboard[NBOARDS]={0};
+  unsigned long long int firstTS = 0;
   while(!rawin->eof()){
    if(signal_received){
       break;
@@ -97,7 +98,7 @@ int main(int argc, char *argv[]){
     //check ID of buffer
     if(id==ID_WAVE){
       if(vl>0)
-	cout << "wave " <<endl;
+	cout << "\nwave " <<endl;
       // 8 header words
       for(int h=0;h<8;h++){
 	rawin->read( (char *)&header[h], sizeof(int) );
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]){
 	if(vl>1)
 	  cout << "header["<<h<<"] = " << header[h] << endl;
       }
-      long long int TS = header[0]&0x7fffffff; // TimeStamp has 31 bit
+      unsigned long long int TS = header[0]&0x7fffffff; // TimeStamp has 31 bit
       int eventNR = header[4];
       int boardNR = header[7];
       int chanNR = header[3];
@@ -123,7 +124,7 @@ int main(int argc, char *argv[]){
 	tswraps[boardNR]++;
       }
       //correct for wrapping of time stamps
-      TS += (long long int)pow(2,31)*tswraps[boardNR];
+      TS += (unsigned long long int)pow(2,31)*tswraps[boardNR];
       //remember the last time stamp of this board
       lastTSboard[boardNR] = header[0]&0x7fffffff;
       //remember first timestamp
@@ -131,7 +132,6 @@ int main(int argc, char *argv[]){
 	firstTS = TS;
       //initialyze the wave
       Wave* wave = new Wave(TS,eventNR,boardNR,chanNR);
-      uint32_t ww;
       int isample =0;
       vector<short> waveform;
       while(!rawin->eof() && isample<MAXSAMPLES){
@@ -153,13 +153,68 @@ int main(int argc, char *argv[]){
       analyzer->AnalyzeWave(wave);
       if(vl>1)
 	wave->Print();
+      //add the wave form as a fragment to the sorter
       Fragment *frag = wave;
       sort->Add(frag);
     }//waveform
     else if(id==ID_PHA){
       if(vl>1)
-    	cout << "Ge " <<endl;
-    }
+    	cout << "\nGe " <<endl;
+      unsigned long long TS,format;
+      unsigned short extras, rawen;
+      unsigned int extras2, chanNR, eventNR, boardNR, eventNRS;
+      rawin->read( (char *)&TS, sizeof(unsigned long long) );
+      bytes_read += sizeof(unsigned long long);  
+      rawin->read( (char *)&format, sizeof(unsigned long long) );
+      bytes_read += sizeof(unsigned long long);
+      rawin->read( (char *)&extras, sizeof(unsigned short) );
+      bytes_read += sizeof(unsigned short);  
+      rawin->read( (char *)&extras2, sizeof(unsigned int) );
+      bytes_read += sizeof(unsigned int);  
+      rawin->read( (char *)&chanNR, sizeof(unsigned int) );
+      bytes_read += sizeof(unsigned int);  
+      rawin->read( (char *)&eventNR, sizeof(unsigned int) );
+      bytes_read += sizeof(unsigned int);  
+      rawin->read( (char *)&boardNR, sizeof(unsigned int) );
+      bytes_read += sizeof(unsigned int);  
+      rawin->read( (char *)&eventNRS, sizeof(unsigned int) );
+      bytes_read += sizeof(unsigned int);        
+      rawin->read( (char *)&rawen, sizeof(unsigned short) );
+      bytes_read += sizeof(unsigned short);  
+      if(vl>1){
+	cout << "TS = " << TS << endl;
+	cout << "format = " << format << endl;
+	cout << "extras = " << extras << endl;
+	cout << "extras2 = " << extras2 << endl;
+	cout << "chanNR = " << chanNR << endl;
+	cout << "eventNR = " << eventNR << endl;
+	cout << "boardNR = " << boardNR << endl;
+	cout << "eventNRS = " << eventNRS << endl;
+	cout << "rawen = " << rawen << endl;
+      }
+      PHA* pha = new PHA(TS,eventNR,boardNR,chanNR/2);
+      pha->SetRaw(rawen);
+      //analyze pha data here
+      analyzer->AnalyzePHA(pha);
+      if(vl>1){
+	//sort->SetVerbose(1);
+	pha->Print();
+      }
+      //add the pulse height data as a fragment to the sorter
+      Fragment *frag = pha;
+      sort->Add(frag);
+      
+      rawin->read( (char *)&ww, sizeof(int) );
+      bytes_read += sizeof(int);
+      if(ww==ID_WAVE || ww==ID_PHA){
+	id = ww;
+      }
+      else{
+	cout << "ww = "<< ww  <<"\t" << (hex) <<"0x"<< ww  << (dec)<< endl;
+	cout << "should be " << ID_WAVE << " or " << ID_PHA << endl;
+	break;
+      }
+    }//ge
     buffers++;
     if(lastbuffer > 0 && buffers >= lastbuffer)
       break;
