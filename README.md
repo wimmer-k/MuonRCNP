@@ -21,9 +21,9 @@ $source setup
 this set the PATH and LD_LIBRARY_PATH, the correct root version 6.12,  
 and also my emacs environment, make your own setup file, if you don’t want this!
 
-There are two main programs, 'EventBuild' and 'Histos'
+There are two main programs, 'EventBuild' and 'Histos', and two scripts
 
-## EventBuild
+## EventBuild:
 this program takes the raw data and produced a time ordered tree with built and analyzed events
 ```
 $EventBuild
@@ -42,7 +42,7 @@ A typical command would be
 ```
 $EventBuild -r 12 -m 20000 -s defaultset.dat
 ```
-you can also use ctrl+c to quit savely, i.e. the fragments will be flushed, events closed, and the file written
+you can also use ctrl+c to quit savely, i.e. the fragments will be flushed, events closed, and the file written.
 
 At the end the program gives you a bit of statistics:
 ```
@@ -59,11 +59,17 @@ Program Run time: 130.648 s.
 Unpacked 20224.4 fragments/s.
 ```
 
+## Histos:
 The second program produces histograms from the tree
+```
 $Histos
-gives you help
-“-i infile” defines the inputfile(s), it can also combine several files into one output
-“-o outfile” the outputfile
-again debugging options are
-“-l L” to read up to event L
+```
+gives you help  
+“-i infile” defines the inputfile(s), it can also combine several files into one output  
+“-o outfile” the outputfile  
+again debugging options are  
+“-l L” to read up to event L  
 “-v V” verbose level
+
+so far there are spectra for the germanium energies and the BaF pulse height defined.
+More spectra need to be defined
