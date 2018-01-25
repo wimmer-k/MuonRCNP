@@ -71,5 +71,5 @@ again debugging options are
 “-l L” to read up to event L  
 “-v V” verbose level
 
-so far there are spectra for the germanium energies and the BaF pulse height defined.
-More spectra need to be defined
+so far there are spectra for the germanium energies and the BaF pulse height defined.  
+More spectra need to be defined.

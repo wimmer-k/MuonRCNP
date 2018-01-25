@@ -23,6 +23,8 @@ public:
     fmaxPH = sqrt(-1);
     fmaxPHtime = 0;
     fLED = 0;
+    fshortint = sqrt(-1);
+    flongint = sqrt(-1);
   }
   //! clearing data
   void Clear(Option_t *option = ""){
@@ -32,6 +34,8 @@ public:
     fmaxPH = sqrt(-1);
     fmaxPHtime = 0;
     fLED = 0;
+    fshortint = sqrt(-1);
+    flongint = sqrt(-1);
   }
   //! set the waveform a sample n
   void SetWave(unsigned short n, short wave){fwave.at(n) = wave;}
