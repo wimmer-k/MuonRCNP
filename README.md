@@ -1,17 +1,26 @@
 # MuonRCNP
-How to:
-lines starting with “$" refer to command line commands, starting with “[]” to commands in root
 
-go to the directory
-$cd ~/work/seamine2018_daq/kathrin
-set the environment
-$source setup
-this set the PATH and LD_LIBRARY_PATH, the correct root version 6.12
-and also my emacs environment, make your own setup file, if you don’t want this 
+Time stamp sorting, event building, and analysis for MuonRCNP experiment Jan 2018
 
 First a bit of terminology:
 a fragment is a single hit, one board, one channel, either wave form data, or pulse height data
-a event contains several fragments, within the event building window
+an event contains several fragments, within the event building window
+
+##Setup:
+
+lines starting with “$" refer to command line commands, starting with “[]” to commands in root
+
+go to the directory
+```
+$cd ~/work/seamine2018_daq/kathrin
+```
+set the environment
+```
+$source setup
+```
+this set the PATH and LD_LIBRARY_PATH, the correct root version 6.12, and also my emacs environment, make your own setup file, if you don’t want this!
+
+
 
 There are two main programs, "EventBuild" and “Histos"
 
