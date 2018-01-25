@@ -26,9 +26,9 @@ int main(int argc, char *argv[]){
   int vl = 0;
   //Read in the command line arguments
   CommandLineInterface* interface = new CommandLineInterface();
-  interface->Add("-l", "last event to be read", &lastevent);
   interface->Add("-i", "input file(s)", &infiles);
   interface->Add("-o", "output file", &outfile);
+  interface->Add("-l", "last event to be read", &lastevent);
   interface->Add("-v", "verbose level", &vl);
   interface->CheckFlags(argc, argv);
 
@@ -69,14 +69,14 @@ int main(int argc, char *argv[]){
   TH1F *hBaF_PH[NBAFS];
   TH2F *hBaF_PH_sum = new TH2F("hBaF_PH_sum", "BaF max. pulse height summary", NBAFS,0,NBAFS, 2000,0,2000); hlist->Add(hBaF_PH_sum);
   TH2F *hBaF_TMAX_sum = new TH2F("hBaF_TMAX_sum", "BaF Time at max. pulse height summary", NBAFS,0,NBAFS, 2000,0,2000); hlist->Add(hBaF_TMAX_sum);
-  for(int i=0;i<NBAFS;i++){
+  for(int i=0; i<NBAFS; i++){
     hBaF_PH[i] = new TH1F(Form("hBaF_PH_%d",i), Form("BaF[%d] max. pulse height",i), 2000,0,2000); hlist->Add(hBaF_PH[i]);
   }
   //Ge detectors
   TH1F *hGe_cal[NGES];
   TH2F *hGe_raw_sum = new TH2F("hGe_raw_sum", "Ge raw pulse height summary", NGES,0,NGES, 2000,0,2000); hlist->Add(hGe_raw_sum);
   TH2F *hGe_cal_sum = new TH2F("hGe_cal_sum", "Ge calibrated energy summary", NGES,0,NGES, 4000,0,4000); hlist->Add(hGe_cal_sum);
-  for(int i=0;i<NGES;i++){
+  for(int i=0; i<NGES; i++){
     hGe_cal[i] = new TH1F(Form("hGe_cal_%d",i), Form("Ge[%d] calibrated energy",i), 4000,0,4000); hlist->Add(hGe_cal[i]);
   }
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
   Int_t status;
   Wave *w;
   PHA *p;
-  for(int i=0; i<nentries;i++){
+  for(int i=0; i<nentries; i++){
     if(signal_received){
       break;
     }

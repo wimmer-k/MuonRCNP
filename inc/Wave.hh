@@ -22,6 +22,7 @@ public:
     fwave.clear();
     fmaxPH = sqrt(-1);
     fmaxPHtime = 0;
+    fLED = 0;
   }
   //! clearing data
   void Clear(Option_t *option = ""){
@@ -30,6 +31,7 @@ public:
     fwave.clear();
     fmaxPH = sqrt(-1);
     fmaxPHtime = 0;
+    fLED = 0;
   }
   //! set the waveform a sample n
   void SetWave(unsigned short n, short wave){fwave.at(n) = wave;}
@@ -37,10 +39,16 @@ public:
   void SetWave(vector<short> wave){fwave = wave;}
   //! set baseline (determined from the first few samples)
   void SetBaseLine(double baseline){ fbaseline = baseline;}
-  //! set maximum pulse height (and subtract baseline )
-  void SetMaxPH(double maxPH){ fmaxPH = -(maxPH - fbaseline);}
+  //! set maximum pulse height 
+  void SetMaxPH(double maxPH){ fmaxPH = maxPH;}
   //! set the time at which the maximum pulse height occured 
   void SetMaxPHTime(short maxPHtime){ fmaxPHtime = maxPHtime;}
+  //! set the leading edge timing
+  void SetLED(short led){ fLED = led;}
+  //! set the short integral
+  void SetShortIntegral(double shortint){ fshortint = shortint;}
+  //! set the long integral
+  void SetLongIntegral(double longint){ flongint = longint;}
   
   //! returns the waveform
   vector <short> GetWave(){ return fwave;}
@@ -52,12 +60,22 @@ public:
   double GetMaxPH(){ return fmaxPH;}
   //! returns the time at which the maximum pulse height occured
   short GetMaxPHTime(){ return fmaxPHtime;}
+  //! returns the leading edge timing
+  short GetLED(){ return fLED;}
+  //! returns the short integral
+  double GetShortIntegral(){ return fshortint;}
+  //! returns the long integral
+  double GetLongIntegral(){ return flongint;}
+  
   //! print the fragment information
   void Print(){
     Fragment::Print();
     cout << "baseline = " << fbaseline;
     cout << ", maximum PH " << fmaxPH;
-    cout << ", at time " << fmaxPHtime << endl;
+    cout << ", at time " << fmaxPHtime;
+    cout << ", LED " << fLED;
+    cout << ", short integral " << fshortint;
+    cout << ", long integral " << flongint << endl;
   }
 protected:
   //! the baseline, derived from the first samples
@@ -66,6 +84,12 @@ protected:
   double fmaxPH;
   //! the timing of the maximum pulse height
   short fmaxPHtime;
+  //! the leading edge timing
+  short fLED;
+  //! the short integral
+  double fshortint;
+  //! the long integral
+  double flongint;
   //! the wave form, only written to file if selected (switch in Makefile need to recompile everything)
 #ifdef WRITE_WAVE
   vector <short> fwave;

@@ -45,7 +45,7 @@ class SortHits{
   //! returns the tree
   TTree* GetTree(){return ftr;}
   //! returns the last timestamp added to the last event
-  long long int GetLastTS(){return fevent->GetLastTS();}
+  unsigned long long int GetLastTS(){return flastTS;}
 private:
   //! the fragment list
   list<Fragment*> flist;
@@ -63,6 +63,8 @@ private:
   int fmemdepth;
   //! the length of the eventbuilding window
   unsigned int fwindow;
+  //! the time stamp of the last written event
+  unsigned long long int flastTS;
   //! the verbose level
   int fvl;
   //! the output tree

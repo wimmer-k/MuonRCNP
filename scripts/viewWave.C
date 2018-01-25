@@ -8,7 +8,7 @@
 #include "TAxis.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/globaldefs.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/Event.hh"
-char * ffilename = (char*)"/home/daq/work/seamine2018_daq/kathrin/root/run0010.root";
+char * ffilename = (char*)"/home/daq/work/seamine2018_daq/kathrin/root/run0011.root";
 void SetFile(char* filename){
   ffilename = filename;
 }
@@ -62,7 +62,9 @@ void ViewWave(int n, int board, int ch){
   tr->SetBranchAddress("event",&evt);
   Int_t status = tr->GetEvent(n);
   Wave *w;
-  //cout << "event wave length " << evt->GetWaveLength() << endl;
+  cout << "event wave length " << evt->GetWaveLength() << endl;
+  if(evt->GetWaveLength()<1)
+    return;
   for(int i=0; i<evt->GetWaveLength(); i++){
     w = evt->GetWave(i);
     //cout << w->GetBoard() <<"\t" << w->GetCh() << endl;
@@ -81,7 +83,7 @@ void ViewWave(int n, int board, int ch){
   }
   c->cd();
   g = new TGraph(length,x,data);
-  g->SetTitle(Form("Wave event %d,board %d, channel %d",n,board,ch));
+  g->SetTitle(Form("Wave event %d, board %d, channel %d",n,board,ch));
   g->Draw("AL");
 }
 void ViewWave(int n, int board){
@@ -121,7 +123,7 @@ void ViewWave(int n, int board){
   }
 
 }
-
+/*
 void ViewWave(int n){
   TCanvas *c = new TCanvas("c","c",1200,600);
   
@@ -144,3 +146,4 @@ void ViewWave(int n){
   g->SetTitle(Form("Wave event %d,board %d, channel %d",n,w->GetBoard(),w->GetCh()));
   g->Draw("AL");
 }
+*/

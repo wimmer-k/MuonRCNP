@@ -9,6 +9,7 @@ SortHits::SortHits(){
   fmemdepth = 200;
   frootfile = NULL;
   fwindow = 2000;
+  flastTS = 0;
 }
 SortHits::SortHits(TFile *out){
   frootfile = out;
@@ -23,11 +24,12 @@ SortHits::SortHits(TFile *out){
   //fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,3000,0,1e10);
   //fhfragTS = new TH2F("hfragTS","hfragTS",2500,0,250000,3000,0,1.5e9);
   //fheventTS = new TH2F("heventTS","heventTS",1100,0,6600,3000,0,1.5e9);
-  fevtnr =0;
+  fevtnr = 0;
   ffragnr = 0;
-  fdiscarded =0;
+  fdiscarded = 0;
   fmemdepth = 200;
   fwindow = 2000;
+  flastTS = 0;
 }
 void SortHits::SetRootFile(TFile *out){
   frootfile = out;
@@ -111,7 +113,7 @@ void SortHits::WriteFragment(Fragment* writeme){
     cout << "writeme TS = " << writeme->GetTS() << " last one in the event " << fevent->GetLastTS() << endl;
   }
   fhTSdiff->Fill(writeme->GetTS() - fevent->GetLastTS());
-  if(fevent->GetLastTS() <0){
+  if(fevent->GetLastTS() <1){
     if(fvl>0)
       cout << "first fragment in the event"<<endl;
     //first fragment
@@ -139,7 +141,7 @@ void SortHits::CloseEvent(){
     fevent->PrintEvent();
   }
   fheventTS->Fill(fevtnr,fevent->GetLastTS());
-
+  flastTS = fevent->GetLastTS();
   frootfile->cd();
   ftr->Fill();
   fevent->Clear();
@@ -148,7 +150,6 @@ void SortHits::CloseEvent(){
 void SortHits::Flush(){
   if(fvl>0)
     cout << __PRETTY_FUNCTION__ << endl;
-  CloseEvent();
   list<Fragment*>::iterator it = flist.begin();
   int ctr = 0;
   if(fvl>1)
@@ -160,6 +161,7 @@ void SortHits::Flush(){
     it = flist.erase(it);
     ctr++;
   }
+  CloseEvent();
   Status();
   if(frootfile){
     cout << "writing tree to root file" << endl;

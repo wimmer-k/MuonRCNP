@@ -1,5 +1,6 @@
 .rootrc
 common/
+customsettings/
 lib/
 root/
 hist/

@@ -1,4 +1,5 @@
-Baselines:		/home/daq/work/seamine2018_daq/kathrin/set/baseline.dat
+Thresholds:		/home/daq/work/seamine2018_daq/kathrin/set/thresholds.dat
+IntegrationWindows:	/home/daq/work/seamine2018_daq/kathrin/set/integrationwindows.dat
 Samples.Baseline:	10
 Ge.0.Gain:                               0.759131
 Ge.0.Offset:                             1.29125
