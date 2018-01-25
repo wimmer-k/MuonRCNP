@@ -8,7 +8,7 @@ an event contains several fragments, within the event building window
 
 ## Setup:
 
-lines starting with “$" refer to command line commands, starting with “[]” to commands in root
+lines starting with "$" refer to command line commands, starting with "[]" to commands in root
 
 go to the directory
 ```
@@ -30,13 +30,14 @@ $EventBuild
 ```
 gives you some help on the options:  
 "-r N" is the run number N, it will automatically read from the proper disk and write the output to ./root/runXXXX.root  
-"-s setfile.dat” is to choose the settings file, which contains the settings for the analysis  
+"-s setfile.dat" is to choose the settings file, which contains the settings for the analysis  
 "-m M" is the memory depth, the number of fragments M stored in memory for timestamp sorting, if you get warnings that events have to be discarded, increase this number  
-“-w W” is the event building window, fragments which are less than W ns away from the last fragment in the current event are added, otherwise a new event is created.  
+"-e E" is the event building window, fragments which are less than E ns away from the last fragment in the current event are added, otherwise a new event is created.  
+"-w W" chooses if the waveform is written to the tree, 0 for never, 1 only if the threshold was crossed, 2 always, 3 if threshold not crossed do not write anything 
 
 two other options are more for debugging:  
-"-l F” is the last fragment to be read, only F fragments are process then  
-"-v V” is the verbose level, the higher V the more stuff is dumped to the screen  
+"-l F" is the last fragment to be read, only F fragments are process then  
+"-v V" is the verbose level, the higher V the more stuff is dumped to the screen  
 
 A typical command would be
 ```
@@ -65,11 +66,11 @@ The second program produces histograms from the tree
 $Histos
 ```
 gives you help  
-“-i infile” defines the inputfile(s), it can also combine several files into one output  
-“-o outfile” the outputfile  
+"-i infile" defines the inputfile(s), it can also combine several files into one output  
+"-o outfile" the outputfile  
 again debugging options are  
-“-l L” to read up to event L  
-“-v V” verbose level
+"-l L" to read up to event L  
+"-v V" verbose level
 
 so far there are spectra for the germanium energies and the BaF pulse height defined.  
 More spectra need to be defined.

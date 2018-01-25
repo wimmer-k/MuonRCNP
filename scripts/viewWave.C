@@ -26,8 +26,8 @@ void ViewBaF(int nstart, double thresh = 200, int nevents=9){
   for(int n=nstart;n<nstart+nevents;n++){
     Int_t status = tr->GetEvent(n);
     cout << "event = " << n << endl;
-    //cout << "event wave length " << evt->GetWaveLength() << endl;
-    for(int i=0; i<evt->GetWaveLength(); i++){
+    //cout << "event wave length " << evt->GetNWaves() << endl;
+    for(int i=0; i<evt->GetNWaves(); i++){
       w = evt->GetWave(i);
       if(w->GetBoard()!=NBAFBOARD)
 	continue;
@@ -40,7 +40,9 @@ void ViewBaF(int nstart, double thresh = 200, int nevents=9){
       int data[MAXSAMPLES];
       int x[MAXSAMPLES];
       TGraph* g;
-      int length = w->GetWave().size();
+      int length = w->GetLength();
+      if(length<1 || w->GetWave().size()<1)
+	continue;
       for(int i=0;i<length;i++){
 	x[i] = i;
 	data[i] = (int)w->GetWave()[i];
@@ -62,10 +64,10 @@ void ViewWave(int n, int board, int ch){
   tr->SetBranchAddress("event",&evt);
   Int_t status = tr->GetEvent(n);
   Wave *w;
-  cout << "event wave length " << evt->GetWaveLength() << endl;
-  if(evt->GetWaveLength()<1)
+  cout << "event wave length " << evt->GetNWaves() << endl;
+  if(evt->GetNWaves()<1)
     return;
-  for(int i=0; i<evt->GetWaveLength(); i++){
+  for(int i=0; i<evt->GetNWaves(); i++){
     w = evt->GetWave(i);
     //cout << w->GetBoard() <<"\t" << w->GetCh() << endl;
     if(w->GetBoard()==board && w->GetCh()==ch)
@@ -74,8 +76,10 @@ void ViewWave(int n, int board, int ch){
   int data[MAXSAMPLES];
   int x[MAXSAMPLES];
   TGraph* g;
-  int length = w->GetWave().size();
   w->Print();
+  int length = w->GetLength();
+  if(length<1 || w->GetWave().size()<1)
+    return;
   for(int i=0;i<length;i++){
     x[i] = i;
     data[i] = (int)w->GetWave()[i];
@@ -98,20 +102,20 @@ void ViewWave(int n, int board){
   int data[MAXSAMPLES];
   int x[MAXSAMPLES];
   vector<TGraph*> gv;
-  //cout << "event wave length " << evt->GetWaveLength() << endl;
-  for(int i=0; i<evt->GetWaveLength(); i++){
+  cout << "event wave length " << evt->GetNWaves() << endl;
+  for(int i=0; i<evt->GetNWaves(); i++){
     w = evt->GetWave(i);
-    //cout << w->GetBoard() <<"\t" << w->GetCh() << endl;
+    cout << w->GetBoard() <<"\t" << w->GetCh() << endl;
     if(w->GetBoard()!=board)
       continue;
     int ch = w->GetCh();
-    int data[MAXSAMPLES];
-    int x[MAXSAMPLES];
     TGraph* g;
-    int length = w->GetWave().size();
-    for(int i=0;i<length;i++){
-      x[i] = i;
-      data[i] = (int)w->GetWave()[i];
+    int length = w->GetLength();
+    if(length<1 || w->GetWave().size()<1)
+      continue;
+    for(int j=0;j<length;j++){
+      x[j] = j;
+      data[j] = (int)w->GetWave()[j];
       //cout << x[i] << "\t" << data[i] << endl;
     }
     c->cd(ch+1);
@@ -123,27 +127,54 @@ void ViewWave(int n, int board){
   }
 
 }
-/*
 void ViewWave(int n){
   TCanvas *c = new TCanvas("c","c",1200,600);
   
   TFile *f = new TFile(ffilename);
   TTree* tr = (TTree*)f->Get("tr");
-  Wave* w = new Wave();
-  tr->SetBranchAddress("wave",&w);
+  Event* evt = new Event();
+  tr->SetBranchAddress("event",&evt);
+  Wave* w = NULL;
   Int_t status = tr->GetEvent(n);
   int data[MAXSAMPLES];
   int x[MAXSAMPLES];
-  TGraph* g;
-  int length = w->GetWave().size();
-  for(int i=0;i<length;i++){
-    x[i] = i;
-    data[i] = (int)w->GetWave()[i];
-    //cout << x[i] << "\t" << data[i] << endl;
+  vector<TGraph*> gv;
+  if(evt->GetNWaves()>16){
+    cout << "too many waves to plot" << endl;
+    return;
   }
-  c->cd();
-  g = new TGraph(length,x,data);
-  g->SetTitle(Form("Wave event %d,board %d, channel %d",n,w->GetBoard(),w->GetCh()));
-  g->Draw("AL");
+  if(evt->GetNWaves()>12)
+    c->Divide(4,4);
+  if(evt->GetNWaves()>9)
+    c->Divide(4,4);
+  if(evt->GetNWaves()>6)
+    c->Divide(3,3);
+  if(evt->GetNWaves()>4)
+    c->Divide(3,2);
+  if(evt->GetNWaves()>2)
+    c->Divide(2,2);
+  if(evt->GetNWaves()>1)
+    c->Divide(2,1);
+
+  //cout << "event wave length " << evt->GetNWaves() << endl;
+  for(int i=0; i<evt->GetNWaves(); i++){
+    w = evt->GetWave(i);
+    int bd = w->GetBoard();
+    int ch = w->GetCh();
+    TGraph* g;
+    int length = w->GetLength();
+    if(length<1 || w->GetWave().size()<1)
+      continue;
+    for(int j=0;j<length;j++){
+      x[j] = j;
+      data[j] = (int)w->GetWave()[j];
+      //cout << x[i] << "\t" << data[i] << endl;
+    }
+    c->cd(ch+1);
+    g = new TGraph(length,x,data);
+    g->SetTitle(Form("Wave event %d,board %d, channel %d",n,bd,ch));
+    gv.push_back(g);
+    gv.back()->Draw("AL");
+  }
 }
-*/
+

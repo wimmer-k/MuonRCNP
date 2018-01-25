@@ -40,7 +40,10 @@ public:
   //! set the waveform a sample n
   void SetWave(unsigned short n, short wave){fwave.at(n) = wave;}
   //! set the waveform
-  void SetWave(vector<short> wave){fwave = wave;}
+  void SetWave(vector<short> wave){
+    fwave = wave;
+    fwavelength = wave.size();
+  }
   //! set baseline (determined from the first few samples)
   void SetBaseLine(double baseline){ fbaseline = baseline;}
   //! set maximum pulse height 
@@ -53,11 +56,16 @@ public:
   void SetShortIntegral(double shortint){ fshortint = shortint;}
   //! set the long integral
   void SetLongIntegral(double longint){ flongint = longint;}
+
+  //! clear the waveform
+  void ClearWave(){
+    fwave.clear();
+  }
   
   //! returns the waveform
   vector <short> GetWave(){ return fwave;}
   //! returns the lenght of the waveform
-  unsigned short GetLength(){ return fwave.size();}
+  unsigned short GetLength(){ return fwavelength;}
   //! returns the baseline
   double GetBaseLine(){ return fbaseline;}
   //! returns the maximum pulse height
@@ -75,6 +83,7 @@ public:
   void Print(){
     Fragment::Print();
     cout << "baseline = " << fbaseline;
+    cout << ", wave length = " << fwavelength;
     cout << ", maximum PH " << fmaxPH;
     cout << ", at time " << fmaxPHtime;
     cout << ", LED " << fLED;
@@ -84,6 +93,8 @@ public:
 protected:
   //! the baseline, derived from the first samples
   double fbaseline;
+  //! the length of the wave form
+  unsigned short fwavelength;
   //! the maximum of the pulse height (converted to positive)
   double fmaxPH;
   //! the timing of the maximum pulse height
@@ -94,12 +105,8 @@ protected:
   double fshortint;
   //! the long integral
   double flongint;
-  //! the wave form, only written to file if selected (switch in Makefile need to recompile everything)
-#ifdef WRITE_WAVE
+  //! the wave form, only written to file, if selected (otherwise cleared)
   vector <short> fwave;
-#else
-  vector <short> fwave; //!
-#endif
 
   /// \cond CLASSIMP
   ClassDef(Wave,1);

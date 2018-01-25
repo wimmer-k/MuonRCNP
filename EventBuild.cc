@@ -23,14 +23,16 @@ int main(int argc, char *argv[]){
   int memdepth = 1000;
   int window = 2000;
   char* setfile = NULL;
+  int writewave = 1;
   //Read in the command line arguments
   CommandLineInterface* interface = new CommandLineInterface();
+  interface->Add("-e", "event building window (in ns)", &window);
   interface->Add("-l", "last fragment to be read", &lastfrag);
   interface->Add("-m", "memory depth for timestamp sorting", &memdepth);
   interface->Add("-r", "run number", &runnr);
   interface->Add("-s", "settings file", &setfile);
   interface->Add("-v", "verbose level", &vl);
-  interface->Add("-w", "event building window (in ns)", &window);
+  interface->Add("-w", "write the wave form, 0 never, 1 if LED triggered, 2 always, 3 write fragment only if LED triggered", &writewave);
   interface->CheckFlags(argc, argv);
 
   if(runnr<1){
@@ -143,13 +145,17 @@ int main(int argc, char *argv[]){
       }
       wave->SetWave(waveform);
 
-      //analyze wave here
-      analyzer->AnalyzeWave(wave);
+      //analyze wave here, true if LED fired
+      bool led = analyzer->AnalyzeWave(wave);
       if(vl>1)
 	wave->Print();
+      if(writewave==0 || (writewave==1&&!led))//0 never, 1 if LED
+	wave->ClearWave();
+      
       //add the wave form as a fragment to the sorter
       Fragment *frag = wave;
-      sort->Add(frag);
+      if(writewave!=3 || led)
+	sort->Add(frag);
     }//waveform
     else if(id==ID_PHA){
       if(vl>1)

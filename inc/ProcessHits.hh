@@ -18,7 +18,7 @@ class ProcessHits{
   //! standard constructor with a settings file
   ProcessHits(char *settings, int vl=0);
   //! analyze the waveforms
-  void AnalyzeWave(Wave* wave);
+  bool AnalyzeWave(Wave* wave);
   //! analyse the pulse height data
   void AnalyzePHA(PHA* pha);
   //! set the verbose level

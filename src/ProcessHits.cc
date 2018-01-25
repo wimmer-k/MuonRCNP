@@ -46,9 +46,10 @@ ProcessHits::ProcessHits(char* settings, int vl){
 }
 /*!
   Analyze the wave forms, calculates the maximum pulse height, and its timing 
+  \returns true if LED threshold was crossed, false if wave did not trigger
   \param wave a pointer to the Wave containing the wave form data to be analyzed
 */
-void ProcessHits::AnalyzeWave(Wave* wave){
+bool ProcessHits::AnalyzeWave(Wave* wave){
   short length = wave->GetWave().size();
   short b = wave->GetBoard();
   short c = wave->GetCh();
@@ -105,8 +106,14 @@ void ProcessHits::AnalyzeWave(Wave* wave){
   wave->SetLED(leadingedge);
   wave->SetShortIntegral(shortint);
   wave->SetLongIntegral(longint);
+
   if(fvl>0)
     wave->Print();
+
+  if(leadingedge < 0)
+    return false;
+  return true;
+      
 }
 /*!
   Analyze the pulse height data, calibrates the Ge raw pusle height signals

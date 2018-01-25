@@ -20,10 +20,6 @@ ALLIBS  	=  $(BASELIBS) -lCommandLineInterface -lSeamine
 LIBS 		= $(ALLIBS)
 LFLAGS		= -g -fPIC -shared
 
-SWITCH = -UWRITE_WAVE
-CFLAGS += $(SWITCH)
-LFLAGS += $(SWITCH)
-
 CFLAGS += -Wl,--no-as-needed
 LFLAGS += -Wl,--no-as-needed
 CFLAGS += -Wno-unused-variable -Wno-write-strings
@@ -37,7 +33,7 @@ ifeq ($(USING_ROOT_6),1)
 endif
 
 SRCS = $(wildcard *.cc)
-PROG = $(patsubst %.cc,%,$(SRCS)) 
+PROG = $(patsubst %.cc,%,$(SRCS))
 all: $(PROG) $(EXTRAS)
 
 EventBuild: EventBuild.cc $(LIB_DIR)/libSeamine.so $(O_FILES)
@@ -45,6 +41,10 @@ EventBuild: EventBuild.cc $(LIB_DIR)/libSeamine.so $(O_FILES)
 	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) $(O_FILES) -o $(BIN_DIR)/$@
 
 Histos: Histos.cc $(LIB_DIR)/libSeamine.so 
+	@echo "Compiling $@"
+	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
+
+Histos2: Histos2.cc $(LIB_DIR)/libSeamine.so 
 	@echo "Compiling $@"
 	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
 
@@ -65,7 +65,7 @@ build/Dictionary.o: build/Dictionary.cc
 build/Dictionary.cc: inc/Event.hh inc/Wave.hh inc/PHA.hh inc/Fragment.hh inc/LinkDef.h
 	@echo "Building $@"
 	@mkdir -p build
-	@rootcint -f $@ -c $(INCLUDES) $(ROOTCFLAGS) $(SWITCH) $(notdir $^)
+	@rootcint -f $@ -c $(INCLUDES) $(ROOTCFLAGS) $(notdir $^)
 
 build/Dictionary_rdict.pcm: build/Dictionary.cc
 	@echo "Confirming $@"

@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
     nbytes += status;
     //histogram filling here
     //BaF data
-    for(int j=0; j<evt->GetWaveLength(); j++){
+    for(int j=0; j<evt->GetNWaves(); j++){
       w = evt->GetWave(j);
       int bd = w->GetBoard();
       int ch = w->GetCh();
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
 	  hBaF_TMAX_sum->Fill(ch-BAFCHSTA,w->GetMaxPHTime());
       }
     }
-    for(int j=0; j<evt->GetPHALength(); j++){
+    for(int j=0; j<evt->GetNPHAs(); j++){
       p = evt->GetPHA(j);
       int bd = p->GetBoard();
       int ch = p->GetCh(); 

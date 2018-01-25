@@ -48,14 +48,14 @@ public:
   //! returns one wave data fragment
   Wave* GetWave(short n){ return fwaves.at(n);}
   //! returns the number of wave form hits in the event
-  unsigned short GetWaveLength(){ return fwaves.size();}
+  unsigned short GetNWaves(){ return fwaves.size();}
 
   //! returns all the pulse height data
   vector <PHA*> GetPHAs(){ return fphas;}
   //! returns one wave data fragment
   PHA* GetPHA(short n){ return fphas.at(n);}
   //! returns the number of pusle height hits in the event
-  unsigned short GetPHALength(){ return fphas.size();}
+  unsigned short GetNPHAs(){ return fphas.size();}
 
   //! returns the last added timestamp
   unsigned long long int GetLastTS() { return flastTS;}
