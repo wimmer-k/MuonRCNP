@@ -64,9 +64,18 @@ int main(int argc, char *argv[]){
   rawin->read( (char *)&id, sizeof(int) );
   bytes_read += sizeof(int);
   int frags=0;
+
+  //TH2F* debugGefragTS = new TH2F("debugGefragTS","debugGefragTS",1000,0,1e6,1000,0,3e9);
+  TH2F* debugGefragTS[2];
+  if(vl>0){
+    for(int i=0;i<2;i++)
+      debugGefragTS[i] = new TH2F(Form("debugGefragTS_%d",i),Form("debugGefragTS_%d",i),10000,0,1e4,2200,0,2.2e9);
+  }
   
-  unsigned int tswraps[NBOARDS]={0};
-  unsigned long long int lastTSboard[NBOARDS]={0};
+  unsigned int tswrapsWave[NWAVEBOARDS]={0};
+  unsigned long long int lastTSboardWave[NWAVEBOARDS]={0};
+  unsigned int tswrapsPHA[NGES]={0};
+  unsigned long long int lastTSchanPHA[NGES]={0};
   unsigned long long int firstTS = 0;
   while(!rawin->eof()){
    if(signal_received){
@@ -109,17 +118,17 @@ int main(int argc, char *argv[]){
 	cout << "\tchannel " << chanNR << endl;
       }
       //check for time stamp wrapping
-      if(TS < lastTSboard[boardNR]){
+      if(TS < lastTSboardWave[boardNR]){
 	if(vl>0)
-	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboard[boardNR]<< endl;
+	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboardWave[boardNR]<< endl;
 	//count the number of time stamp wraps
-	tswraps[boardNR]++;
+	tswrapsWave[boardNR]++;
       }
       //remember the last time stamp of this board
-      lastTSboard[boardNR] = header[0]&0x7fffffff;
+      lastTSboardWave[boardNR] = header[0]&0x7fffffff;
 
       //correct for wrapping of time stamps
-      TS += (unsigned long long int)pow(2,31)*tswraps[boardNR];
+      TS += (unsigned long long int)pow(2,31)*tswrapsWave[boardNR];
       //convert to ns
       TS*=(unsigned long long int)WAVETSTICK;
       
@@ -192,18 +201,22 @@ int main(int argc, char *argv[]){
 	cout << "eventNRS = " << eventNRS << endl;
 	cout << "rawen = " << rawen << endl;
       }
+      //Ge 0 in chan 0, Ge 2 in chan 2, because scalers are only available for pairs of channels
+      chanNR/=2;
+      if(vl>0)
+	debugGefragTS[chanNR]->Fill(sort->GetFragNr()+1,TS);
       //check for time stamp wrapping
-      if(TS < lastTSboard[boardNR]){
+      if(TS < lastTSchanPHA[chanNR]){
 	if(vl>0)
-	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboard[boardNR]<< endl;
+	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSchanPHA[chanNR] << " last event " << sort->GetLastTS() << endl;
 	//count the number of time stamp wraps
-	tswraps[boardNR]++;
+	tswrapsPHA[chanNR]++;
       }
       //remember the last time stamp of this board
-      lastTSboard[boardNR] = TS;
+      lastTSchanPHA[chanNR] = TS;
 
       //correct for wrapping of time stamps
-      TS += (unsigned long long int)pow(2,31)*tswraps[boardNR];
+      TS += (unsigned long long int)pow(2,31)*tswrapsPHA[chanNR];
       //convert to ns
       TS*=(unsigned long long int)PHATSTICK;
       
@@ -211,7 +224,7 @@ int main(int argc, char *argv[]){
       if(firstTS ==0)
 	firstTS = TS;
       
-      PHA* pha = new PHA(TS,eventNR,boardNR,chanNR/2);
+      PHA* pha = new PHA(TS,eventNR,boardNR,chanNR);
       pha->SetRaw(rawen);
       //analyze pha data here
       analyzer->AnalyzePHA(pha);
@@ -243,7 +256,11 @@ int main(int argc, char *argv[]){
   cout << "------------------------------------" << endl;
   cout << "Total of " << frags << " data fragments ("<<bytes_read/(1024*1024)<<" MB) read." << endl;
   cout << sort->GetTree()->GetEntries() << " entries written to tree ("<<sort->GetTree()->GetZipBytes()/(1024*1024)<<" MB)"<< endl;
-  cout << "First time stamp: " <<  firstTS << ", last time stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*8e-9 << " seconds." << endl;
+  cout << "First time stamp: " <<  firstTS << ", last time stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*1e-9 << " seconds." << endl;
+  if(vl>0){
+    for(int i=0;i<2;i++)
+      debugGefragTS[i]->Write();
+  }
   rootout->Close();
   double time_end = get_time();
   cout << "Program Run time: " << time_end - time_start << " s." << endl;

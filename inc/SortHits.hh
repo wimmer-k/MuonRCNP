@@ -46,6 +46,8 @@ class SortHits{
   TTree* GetTree(){return ftr;}
   //! returns the last timestamp added to the last event
   unsigned long long int GetLastTS(){return flastTS;}
+  //! returns the number of fragments
+  int GetFragNr(){return ffragnr;}
 private:
   //! the fragment list
   list<Fragment*> flist;

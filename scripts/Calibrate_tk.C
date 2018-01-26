@@ -19,14 +19,14 @@
 #include "TSpectrum.h"
 #include "TVirtualFitter.h"
 double lbinw;
-Double_t gausbg(Double_t *x, Double_t *par);
+Double_t gausbg(Double_t *x, Double_t *par); //fit func : gausian + background
 
 using namespace TMath;
 using namespace std;
-void Calibrate(char* filename, int source, double rough){
+void Calibrate_tk(char* filename, int source, double rough){
   TCanvas *c = new TCanvas("c","c",800,800);
   c->Divide(2,2);
-  if(source != 0 && source != 1){
+  if(source != 0 && source != 1 && source != 2 && source != 3 && source != 4 && source != 5){
     cerr<<"source not yet implemented!"<<endl;
     exit(1);
   }
@@ -40,10 +40,26 @@ void Calibrate(char* filename, int source, double rough){
     cout << "60Co" << endl;
     npeaks = 2;
   }
+  if(source==2){
+    cout << "56Co" << endl;
+    npeaks = 8;
+  }
+  if(source==3){
+    cout << "22Na" << endl;
+    npeaks = 2;
+  }
+  if(source==4){
+    cout << "133Ba" << endl;
+    npeaks = 5;
+  }
+  if(source==5){
+    cout << "137Cs" << endl;
+    npeaks = 1;
+  }
   TFile* infile = new TFile(filename);
   TH2F* h2d = (TH2F*)infile->Get("hGe_raw_sum");
-  TEnv* output = new TEnv("cal/cal.dat");
-  TFile* hfile = new TFile("cal/cal.root","RECREATE");
+  TEnv* output = new TEnv("cal/cal_tk.dat");
+  TFile* hfile = new TFile("cal/cal_tk.root","RECREATE");
   vector <double> en;
   vector <double> ene;
   vector <vector<double> > fitv;
@@ -60,7 +76,7 @@ void Calibrate(char* filename, int source, double rough){
   fcore.resize(cores); //fit funtions
   cgain.resize(cores); //gains
   coffset.resize(cores); //offsets
-  if(source==0){
+  if(source==0){ //Eu
     en[0] = 121.8; 
     en[1] = 244.7; 
     en[2] = 344.3; 
@@ -78,11 +94,57 @@ void Calibrate(char* filename, int source, double rough){
     ene[6] = 0.1; 
     ene[7] = 0.1; 
   }
-  else if(source==1){
+  else if(source==1){ //60Co
     en[0] = 1173.228;
     en[1] = 1332.492;
     ene[0] = 0.1;
     ene[1] = 0.1;
+  }
+  else if(source==2){ //56Co
+    en[0] = 511.;
+    en[1] = 846.77;
+    en[2] = 1037.843;
+    en[3] = 1238.288;
+    en[4] = 1771.357;
+    en[5] = 2034.791;
+    en[6] = 2598.5;
+    en[7] = 3253.503;
+    ene[0] = 0.1;
+    ene[1] = 0.1;
+    ene[2] = 0.1;
+    ene[3] = 0.1;
+    ene[4] = 0.1;
+    ene[5] = 0.1;
+    ene[6] = 0.1;
+    ene[7] = 0.1;
+  }
+  else if(source==3){ //Na
+    en[0] = 511.;
+    en[1] = 1274.537;
+    ene[0] = 0.1;
+    ene[0] = 0.1;
+  }
+  else if(source==4){ //Ba
+    //en[0] = 79.6142;
+    en[0] = 80.9979;
+    //en[2] = 160.612;
+    //en[3] = 223.2368;
+    en[1] = 276.3989;
+    en[2] = 302.8508;
+    en[3] = 356.0129;
+    en[4] = 383.8485;
+    ene[0] = 0.1;
+    ene[1] = 0.1;
+    ene[2] = 0.1;
+    ene[3] = 0.1;
+    ene[4] = 0.1;
+    // ene[5] = 0.1;
+    //ene[6] = 0.1;
+    //ene[7] = 0.1;    
+  }
+  else if(source==5){ //Cs
+    en[0] = 661.657;
+    ene[0] = 0.1;
   }
   for(int c=0;c<cores;c++){
     fitv[c].resize(npeaks);
@@ -107,13 +169,17 @@ void Calibrate(char* filename, int source, double rough){
       //continue;
     }
     else{
-      hcore[core]->GetXaxis()->SetRangeUser(0,4000);
-      TSpectrum *sp = new TSpectrum(npeaks,1);
+      hcore[core]->GetXaxis()->SetRangeUser(0,5000); //4000 was not enough for 56Co
+      if(source==2)
+	hcore[core]->GetXaxis()->SetRangeUser(500,5000);
+      if(source==4) //133Ba
+	hcore[core]->GetXaxis()->SetRangeUser(50,600);
+      TSpectrum *sp = new TSpectrum(npeaks,1); //(num of peak , resolution[keV])
       sp->SetResolution(1);
       Int_t nfound = 0;
-      double thresh = 0.05;
+      double thresh = 0.1; //original 0.05
       if(source ==1)
-	thresh = 0.5;
+	thresh = 0.5; // to be changed especially for 56Co
       nfound = sp->Search(hcore[core],1,"nobackground",thresh);
       
       Double_t *xpeaks = sp->GetPositionX();
@@ -161,7 +227,7 @@ void Calibrate(char* filename, int source, double rough){
       //perform the peak fitting
       for(int p=0;p<npeaks;p++){
 	lbinw = hcore[core]->GetBinWidth(1);
-	fcore[core][p] = new TF1(Form("f_%d_%d",core,p),gausbg,xpeaks[p]-10/rough,xpeaks[p]+10/rough,5);
+	fcore[core][p] = new TF1(Form("f_%d_%d",core,p),gausbg,xpeaks[p]-10/rough,xpeaks[p]+10/rough,5); 
 	fcore[core][p]->SetLineColor(3);
 	fcore[core][p]->SetLineWidth(1);
 	double hint = hcore[core]->Integral(hcore[core]->FindBin(xpeaks[p]-20),hcore[core]->FindBin(xpeaks[p]+20));
@@ -169,13 +235,13 @@ void Calibrate(char* filename, int source, double rough){
 	  continue;
 
 	//background estimate
-	fcore[core][p]->SetParameter(0,(hcore[core]->GetBinContent(fitv[core][p]/hcore[core]->GetBinWidth(0)-20)+ hcore[core]->GetBinContent(fitv[core][p]/hcore[core]->GetBinWidth(0)+20) )/2 );
-	fcore[core][p]->SetParameter(1,0);
+	fcore[core][p]->SetParameter(0,(hcore[core]->GetBinContent(fitv[core][p]/hcore[core]->GetBinWidth(0)-20)+ hcore[core]->GetBinContent(fitv[core][p]/hcore[core]->GetBinWidth(0)+20) )/2 ); //bg const.
+	fcore[core][p]->SetParameter(1,0); //bg slope
 
-	fcore[core][p]->SetParameter(2,hcore[core]->Integral(xpeaks[p]-10/rough, xpeaks[p]+10/rough));
+	fcore[core][p]->SetParameter(2,hcore[core]->Integral(xpeaks[p]-10/rough, xpeaks[p]+10/rough)); //norm
 
-	fcore[core][p]->SetParameter(3,xpeaks[p]);
-	fcore[core][p]->SetParameter(4,1);
+	fcore[core][p]->SetParameter(3,xpeaks[p]); //mean
+	fcore[core][p]->SetParameter(4,1); //sigma ~ Ge FWHM ~ 1keV
 	fcore[core][p]->SetParLimits(4,0.01,100);
 	
 	hcore[core]->Fit(fcore[core][p],"q0Rn");
