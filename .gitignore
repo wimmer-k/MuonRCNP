@@ -15,3 +15,7 @@ scripts/Calibrate_C.so
 scripts/Calibrate_C_ACLiC_dict_rdict.pcm
 setup
 status
+Histos2.cc
+
+scripts/*Calibrate_tk*
+scripts/cal*

@@ -188,7 +188,7 @@ void Calibrate(char* filename, int source, double rough){
 	fcore[core][p]->Write("",TObject::kOverwrite);
       }//npeaks
       c->cd(1+core);
-      hcore[core]->Draw();
+      hcore[core]->DrawCopy();
       for(int p=0;p<npeaks;p++){
 	fcore[core][p]->SetLineColor(3);
 	fcore[core][p]->Draw("same");

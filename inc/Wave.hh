@@ -21,8 +21,8 @@ public:
     fbaseline = sqrt(-1);
     fwave.clear();
     fmaxPH = sqrt(-1);
-    fmaxPHtime = 0;
-    fLED = 0;
+    fmaxPHtime = -1;
+    fLED = -1;
     fshortint = sqrt(-1);
     flongint = sqrt(-1);
   }
@@ -32,8 +32,8 @@ public:
     fbaseline = sqrt(-1);
     fwave.clear();
     fmaxPH = sqrt(-1);
-    fmaxPHtime = 0;
-    fLED = 0;
+    fmaxPHtime = -1;
+    fLED = -1;
     fshortint = sqrt(-1);
     flongint = sqrt(-1);
   }

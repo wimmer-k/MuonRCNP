@@ -11,11 +11,19 @@
 		    
 #define WAVETSTICK  8
 #define PHATSTICK   2
+
+#define PLABOARD    0
+#define NPLAS       4
+#define PLACHSTA    0
+#define PLACHEND    3
 		    
-#define NBAFBOARD   0
+#define BAFBOARD    0
 #define NBAFS       7
 #define BAFCHSTA    4
 #define BAFCHEND    10
-		    
-#define NGEBOARD    3
+
+#define RFBOARD     0
+#define RFCH        11
+
+#define GEBOARD     3
 #define NGES        2

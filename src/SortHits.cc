@@ -60,8 +60,10 @@ bool SortHits::FullList(Fragment* addme){
   if((*it)->GetTS() > addme->GetTS()){
     fdiscarded++;
     cout << __PRETTY_FUNCTION__ << " problem" << endl;
-    cout << "current timestamp fragment " << addme->GetTS() << endl;
-    cout << "oldest timestamp in list " << (*it)->GetTS() << endl;
+    cout << "current fragment: ";
+    addme->Print();
+    cout << "oldest fragment: ";
+    (*it)->Print();
     cout << "discarding this fragment, you should increase memory depth" << endl;
     return false;
   }
