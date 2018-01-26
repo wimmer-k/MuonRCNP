@@ -75,9 +75,9 @@ int main(int argc, char *argv[]){
     if(frags % 1000 == 0){
       double time_end = get_time();
       cout << "\r" << frags << " fragments read... "<<bytes_read/(1024*1024)<<" MB... "<<frags/(time_end - time_start) << " fragments/s" << flush;
-      if(frags % 1000000 == 0){
-	sort->GetTree()->AutoSave();
-      }
+      // if(frags % 1000000 == 0){
+      // 	sort->GetTree()->AutoSave();
+      // }
     }
     
     if(vl>0)

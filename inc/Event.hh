@@ -22,7 +22,13 @@ public:
   }
   //! clearing data
   void Clear(Option_t *option = ""){
+    for(vector<Wave*>::iterator w=fwaves.begin(); w!=fwaves.end(); w++){
+      delete *w;
+    }
     fwaves.clear();
+    for(vector<PHA*>::iterator p=fphas.begin(); p!=fphas.end(); p++){
+      delete *p;
+    }
     fphas.clear();
     flastTS  = 0;
   }

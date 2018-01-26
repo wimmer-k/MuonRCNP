@@ -12,18 +12,7 @@ SortHits::SortHits(){
   flastTS = 0;
 }
 SortHits::SortHits(TFile *out){
-  frootfile = out;
-  ftr = new TTree("tr","events");
-  fevent = new Event();
-  ftr->Branch("event",&fevent,320000);
-
-  fhTSdiff = new TH1F("hTSdiff","hTSdiff",1000,0,100000);
-  fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,1000,0,1e12);
-  fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,1000,0,1e12);
-  //fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,3000,0,1e10);
-  //fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,3000,0,1e10);
-  //fhfragTS = new TH2F("hfragTS","hfragTS",2500,0,250000,3000,0,1.5e9);
-  //fheventTS = new TH2F("heventTS","heventTS",1100,0,6600,3000,0,1.5e9);
+  SetRootFile(out);
   fevtnr = 0;
   ffragnr = 0;
   fdiscarded = 0;
@@ -33,10 +22,13 @@ SortHits::SortHits(TFile *out){
 }
 void SortHits::SetRootFile(TFile *out){
   frootfile = out;
+  out->cd();
   ftr = new TTree("tr","events");
   ftr->SetDirectory(out);
   fevent = new Event();
-  ftr->Branch("event",&fevent);
+  ftr->Branch("event",&fevent,32000000);
+  ftr->SetAutoSave(-300000000);//300 MB
+  ftr->SetAutoFlush(-30000000);//30 MB
   
   fhTSdiff = new TH1F("hTSdiff","hTSdiff",1000,0,100000);
   fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,1000,0,1e12);
