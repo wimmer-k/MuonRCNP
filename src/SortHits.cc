@@ -46,8 +46,7 @@ bool SortHits::Add(Fragment* addme){
     return true;
   }
   else if(ffragnr > fmemdepth){
-    //to be written
-    //cout << "ffragnr > fmemdepth" << endl;
+    //add to a full list, remove the oldest fragment first
     return FullList(addme);
   }
   else{
@@ -71,7 +70,6 @@ bool SortHits::FullList(Fragment* addme){
   //write out oldest fragment on the list
   WriteFragment(*it);
   //remove it from list
-  //delete (*it);
   it = flist.erase(it);
   return Insert(addme);
 }
@@ -82,9 +80,7 @@ bool SortHits::Insert(Fragment* insertme){
   }
   list<Fragment*>::iterator it = flist.end();
   it--;
-  //cout << "end = " << (*it)->TS << endl;
   while(it != flist.begin() && (*it)->GetTS() >= insertme->GetTS()){
-    //cout << "list " << (*it)->TS << endl;
     it--;
   }
   if(it != flist.begin())

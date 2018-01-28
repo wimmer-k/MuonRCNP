@@ -75,11 +75,14 @@ int main(int argc, char *argv[]){
   }
   //TS differences
   TH1F *hGe_Pla_TSdiff[NGES][NPLAS];
+  TH2F *hGe_Pla_cal_TSdiff[NGES][NPLAS];
   TH1F *hGe_gatePla[NGES][NPLAS];
   for(int g=0; g<NGES; g++){
     for(int p=0; p<NPLAS; p++){
       hGe_Pla_TSdiff[g][p] = new TH1F(Form("hGe%d_Pla%d_TSdiff",g,p), Form("TS difference Ge[%d] - Plastic[%d]",g,p), 2000,-400000,400000); hlist->Add(hGe_Pla_TSdiff[g][p]);
       hGe_gatePla[g][p] = new TH1F(Form("hGe%d_gatePla%d",g,p), Form("Ge[%d] gated on Plastic[%d]",g,p), 8000,-0,8000); hlist->Add(hGe_gatePla[g][p]);
+      hGe_Pla_cal_TSdiff[g][p] = new TH2F(Form("hGe%d_Pla%d_cal_TSdiff",g,p), Form("GE[%d] energy versus TS difference Ge[%d] - Plastic[%d]",g,g,p), 2000,-50000,50000,4000,0,4000); hlist->Add(hGe_Pla_cal_TSdiff[g][p]);
+      
     }
   }
   //Pla detectors
@@ -252,6 +255,7 @@ int main(int argc, char *argv[]){
 	for(int j=0;j<NPLAS;j++){
 	  if(LEDpla[j]>0 && TSpla[j]>0 && p->GetTS()>0){
 	    hGe_Pla_TSdiff[ch][j]->Fill((double)p->GetTS()-(double)TSpla[j]);
+	    hGe_Pla_cal_TSdiff[ch][j]->Fill((double)p->GetTS()-(double)TSpla[j],en);
 	    //cout << "pha = " << p->GetTS() << ",\tpla = " << TSpla[j] << ",\t diff = " << (double)p->GetTS()- (double)TSpla[j] << ",\t eventN pha = " << p->GetNEvent() << ",\tpla = " << evtNpla[j] << ",\t diff = " << p->GetNEvent()- evtNpla[j] << endl;
 	    hGe_gatePla[ch][j]->Fill(en);
 	  }

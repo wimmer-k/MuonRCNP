@@ -23,7 +23,6 @@ int main(int argc, char *argv[]){
   int memdepth = 20000;
   int window = 2000;
   char* setfile = NULL;
-  int writewave = 1;
   //Read in the command line arguments
   CommandLineInterface* interface = new CommandLineInterface();
   interface->Add("-e", "event building window (in ns)", &window);
@@ -32,7 +31,6 @@ int main(int argc, char *argv[]){
   interface->Add("-r", "run number", &runnr);
   interface->Add("-s", "settings file", &setfile);
   interface->Add("-v", "verbose level", &vl);
-  interface->Add("-w", "write the wave form, 0 never, 1 if LED triggered, 2 always, 3 write fragment only if LED triggered (default 1)", &writewave);
   interface->CheckFlags(argc, argv);
 
   if(runnr<1){
@@ -43,12 +41,12 @@ int main(int argc, char *argv[]){
     cout <<"no settings file, using defaultset.dat" << endl;
     setfile = "./defaultset.dat";
   }
-
+  
   int disk = runnr%3;
   ifstream *rawin = new ifstream(Form("%s%02d%s%02d/run%04d.dat",baseraw0,disk,baseraw1,disk,runnr), ios::in | ios::binary);
-  TFile *rootout = new TFile(Form("%s/run%04d.root",baseroot,runnr), "RECREATE");
+  TFile *rootout = new TFile(Form("%s/fast%04d.root",baseroot,runnr), "RECREATE");
   cout << "reading file: " << Form("%s%02d%s%02d/run%04d.dat",baseraw0,disk,baseraw1,disk,runnr) << endl;
-  cout << "output file:  " << Form("%s/run%04d.root",baseroot,runnr) << endl;
+  cout << "output file:  " << Form("%s/fast%04d.root",baseroot,runnr) << endl;
 
   ProcessHits* analyzer = new ProcessHits(setfile,vl);
   
@@ -64,16 +62,9 @@ int main(int argc, char *argv[]){
   rawin->read( (char *)&id, sizeof(int) );
   bytes_read += sizeof(int);
   int frags=0;
-
-  //TH2F* debugGefragTS = new TH2F("debugGefragTS","debugGefragTS",1000,0,1e6,1000,0,3e9);
-  TH2F* debugGefragTS[2];
-  if(vl>0){
-    for(int i=0;i<2;i++)
-      debugGefragTS[i] = new TH2F(Form("debugGefragTS_%d",i),Form("debugGefragTS_%d",i),10000,0,1e4,2200,0,2.2e9);
-  }
   
-  unsigned int tswrapsWave[NWAVEBOARDS]={0};
-  unsigned long long int lastTSboardWave[NWAVEBOARDS]={0};
+  unsigned int tswrapsWave = 0;
+  unsigned long long int lastTSWave = 0;
   unsigned int tswrapsPHA[NGES]={0};
   unsigned long long int lastTSchanPHA[NGES]={0};
   unsigned long long int firstTS = 0;
@@ -81,16 +72,11 @@ int main(int argc, char *argv[]){
     if(signal_received){
       break;
     }
-    if(frags % 1000 == 0){
+    if(frags % 10000 == 0){
       double time_end = get_time();
       cout << "\r" << frags << " fragments read... "<<bytes_read/(1024*1024)<<" MB... "<<frags/(time_end - time_start) << " fragments/s" << flush;
-      // if(frags % 1000000 == 0){
-      // 	sort->GetTree()->AutoSave();
-      // }
     }
     
-    if(vl>0)
-      cout << "id = "<< id  <<"\t" << (hex) << id  << (dec)<< endl;
     //check if we are at the end of the file
     if(rawin->eof()){
       cout << "end of file" << endl;
@@ -98,47 +84,41 @@ int main(int argc, char *argv[]){
     }
     //check ID of fragment
     if(id==ID_WAVE){
-      if(vl>0)
-	cout << "\nwave " <<endl;
       // 8 header words
       for(int h=0; h<8; h++){
 	rawin->read( (char *)&header[h], sizeof(int) );
 	bytes_read += sizeof(int);  
-	if(vl>1)
-	  cout << "header["<<h<<"] = " << header[h] << endl;
       }
       unsigned long long int TS = header[0]&0x7fffffff; // TimeStamp has 31 bit
       int eventNR = header[4];
       int boardNR = header[7];
       int chanNR = header[3];
-      if(vl>0){
-	cout << "timestamp (ticks)" << TS;
-	cout << "\tn event " << eventNR;
-	cout << "\tboard number " << boardNR;
-	cout << "\tchannel " << chanNR << endl;
-      }
-      //check for time stamp wrapping
-      if(TS < lastTSboardWave[boardNR]){
-	if(vl>0)
-	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSboardWave[boardNR]<< endl;
-	//count the number of time stamp wraps
-	tswrapsWave[boardNR]++;
-      }
-      //remember the last time stamp of this board
-      lastTSboardWave[boardNR] = header[0]&0x7fffffff;
+      if(boardNR==0 && chanNR==0){
+	//check for time stamp wrapping
+	if(TS < lastTSWave){
+	  //count the number of time stamp wraps
+	  tswrapsWave++;
+	}
+	//remember the last time stamp of this board
+	lastTSWave = header[0]&0x7fffffff;
 
-      //correct for wrapping of time stamps
-      TS += (unsigned long long int)pow(2,31)*tswrapsWave[boardNR];
-      //convert to ns
-      TS*=(unsigned long long int)WAVETSTICK;
-      
-      //remember first timestamp
-      if(firstTS ==0)
-	firstTS = TS;
-      //initialyze the wave
-      Wave* wave = new Wave(TS,eventNR,boardNR,chanNR);
+	//correct for wrapping of time stamps
+	TS += (unsigned long long int)pow(2,31)*tswrapsWave;
+	//convert to ns
+	TS*=(unsigned long long int)WAVETSTICK;
+	
+	//remember first timestamp
+	if(firstTS ==0)
+	  firstTS = TS;
+	//initialyze the wave
+	Wave* wave = new Wave(TS,eventNR,boardNR,chanNR);
+	//add fake LED for Histos
+	wave->SetLED(1);
+	//add the wave form as a fragment to the sorter
+	Fragment *frag = wave;
+	sort->Add(frag);
+      }
       int isample =0;
-      vector<short> waveform;
       while(!rawin->eof() && isample<MAXSAMPLES){
 	rawin->read( (char *)&ww, sizeof(int) );
 	bytes_read += sizeof(int);
@@ -147,28 +127,10 @@ int main(int argc, char *argv[]){
 	  id = ww;
 	  break;
 	}
-	// order of waveform samples 1 0, 3 2, ...
-	waveform.push_back(ww&0x0000ffff);
-	waveform.push_back((ww&0xffff0000) >> 16);
 	isample++;
       }
-      wave->SetWave(waveform);
-
-      //analyze wave here, true if LED fired
-      bool led = analyzer->AnalyzeWave(wave);
-      if(vl>1)
-	wave->Print();
-      if(writewave==0 || (writewave==1&&!led))//0 never, 1 if LED
-	wave->ClearWave();
-      
-      //add the wave form as a fragment to the sorter
-      Fragment *frag = wave;
-      if(writewave!=3 || led)
-	sort->Add(frag);
     }//waveform
     else if(id==ID_PHA){
-      if(vl>1)
-    	cout << "\nGe " <<endl;
       unsigned long long TS,format;
       unsigned short extras, rawen;
       unsigned int extras2, chanNR, eventNR, boardNR, eventNRS;
@@ -190,25 +152,10 @@ int main(int argc, char *argv[]){
       bytes_read += sizeof(unsigned int);        
       rawin->read( (char *)&rawen, sizeof(unsigned short) );
       bytes_read += sizeof(unsigned short);  
-      if(vl>1){
-	cout << "TS = " << TS << endl;
-	cout << "format = " << format << endl;
-	cout << "extras = " << extras << endl;
-	cout << "extras2 = " << extras2 << endl;
-	cout << "chanNR = " << chanNR << endl;
-	cout << "eventNR = " << eventNR << endl;
-	cout << "boardNR = " << boardNR << endl;
-	cout << "eventNRS = " << eventNRS << endl;
-	cout << "rawen = " << rawen << endl;
-      }
       //Ge 0 in chan 0, Ge 2 in chan 2, because scalers are only available for pairs of channels
       chanNR/=2;
-      if(vl>0)
-	debugGefragTS[chanNR]->Fill(sort->GetFragNr()+1,TS);
       //check for time stamp wrapping
       if(TS < lastTSchanPHA[chanNR]){
-	if(vl>0)
-	  cout << "wrapping on board " << boardNR <<" detected: this time stamp:" << TS << " last one on this board " << lastTSchanPHA[chanNR] << " last event " << sort->GetLastTS() << endl;
 	//count the number of time stamp wraps
 	tswrapsPHA[chanNR]++;
       }
@@ -228,10 +175,7 @@ int main(int argc, char *argv[]){
       pha->SetRaw(rawen);
       //analyze pha data here
       analyzer->AnalyzePHA(pha);
-      if(vl>1){
-	//sort->SetVerbose(1);
-	pha->Print();
-      }
+
       //add the pulse height data as a fragment to the sorter
       Fragment *frag = pha;
       sort->Add(frag);
@@ -257,10 +201,7 @@ int main(int argc, char *argv[]){
   cout << "Total of " << frags << " data fragments ("<<bytes_read/(1024*1024)<<" MB) read." << endl;
   cout << sort->GetTree()->GetEntries() << " entries written to tree ("<<sort->GetTree()->GetZipBytes()/(1024*1024)<<" MB)"<< endl;
   cout << "First time stamp: " <<  firstTS << ", last time stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*1e-9 << " seconds." << endl;
-  if(vl>0){
-    for(int i=0;i<2;i++)
-      debugGefragTS[i]->Write();
-  }
+
   rootout->Close();
   double time_end = get_time();
   cout << "Program Run time: " << time_end - time_start << " s." << endl;

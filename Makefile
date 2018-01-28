@@ -40,6 +40,10 @@ EventBuild: EventBuild.cc $(LIB_DIR)/libSeamine.so $(O_FILES)
 	@echo "Compiling $@"
 	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) $(O_FILES) -o $(BIN_DIR)/$@
 
+EventBuildFast: EventBuildFast.cc $(LIB_DIR)/libSeamine.so $(O_FILES)
+	@echo "Compiling $@"
+	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) $(O_FILES) -o $(BIN_DIR)/$@
+
 Histos: Histos.cc $(LIB_DIR)/libSeamine.so 
 	@echo "Compiling $@"
 	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
