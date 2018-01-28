@@ -32,7 +32,7 @@ void Calibrate_tk(char* filename, int source, double rough){
   }
   int cores = 2;  //re-using some GRETINA script here
   int npeaks;
-  if(source==0){
+    if(source==0){
     cout << "152Eu" << endl;
     npeaks = 8;
   }
@@ -42,7 +42,7 @@ void Calibrate_tk(char* filename, int source, double rough){
   }
   if(source==2){
     cout << "56Co" << endl;
-    npeaks = 8;
+    npeaks = 5;
   }
   if(source==3){
     cout << "22Na" << endl;
@@ -50,7 +50,7 @@ void Calibrate_tk(char* filename, int source, double rough){
   }
   if(source==4){
     cout << "133Ba" << endl;
-    npeaks = 5;
+    npeaks = 4;
   }
   if(source==5){
     cout << "137Cs" << endl;
@@ -60,6 +60,9 @@ void Calibrate_tk(char* filename, int source, double rough){
   TH2F* h2d = (TH2F*)infile->Get("hGe_raw_sum");
   TEnv* output = new TEnv("cal/cal_tk.dat");
   TFile* hfile = new TFile("cal/cal_tk.root","RECREATE");
+  //TEnv* outdots = new TEnv(Form("cal/caldots_tk%d.dat",source));
+  ofstream fout;
+  fout.open(Form("cal/caldots_tk%d.dat",source));
   vector <double> en;
   vector <double> ene;
   vector <vector<double> > fitv;
@@ -106,17 +109,17 @@ void Calibrate_tk(char* filename, int source, double rough){
     en[2] = 1037.843;
     en[3] = 1238.288;
     en[4] = 1771.357;
-    en[5] = 2034.791;
-    en[6] = 2598.5;
-    en[7] = 3253.503;
+    //en[5] = 2034.791;
+    //en[6] = 2598.5;
+    //en[7] = 3253.503;
     ene[0] = 0.1;
     ene[1] = 0.1;
     ene[2] = 0.1;
     ene[3] = 0.1;
     ene[4] = 0.1;
-    ene[5] = 0.1;
-    ene[6] = 0.1;
-    ene[7] = 0.1;
+    //ene[5] = 0.1;
+    //ene[6] = 0.1;
+    //ene[7] = 0.1;
   }
   else if(source==3){ //Na
     en[0] = 511.;
@@ -126,18 +129,18 @@ void Calibrate_tk(char* filename, int source, double rough){
   }
   else if(source==4){ //Ba
     //en[0] = 79.6142;
-    en[0] = 80.9979;
+    //en[0] = 80.9979;
     //en[2] = 160.612;
     //en[3] = 223.2368;
-    en[1] = 276.3989;
-    en[2] = 302.8508;
-    en[3] = 356.0129;
-    en[4] = 383.8485;
+    en[0] = 276.3989;
+    en[1] = 302.8508;
+    en[2] = 356.0129;
+    en[3] = 383.8485;
     ene[0] = 0.1;
     ene[1] = 0.1;
     ene[2] = 0.1;
     ene[3] = 0.1;
-    ene[4] = 0.1;
+    //ene[4] = 0.1;
     // ene[5] = 0.1;
     //ene[6] = 0.1;
     //ene[7] = 0.1;    
@@ -169,22 +172,32 @@ void Calibrate_tk(char* filename, int source, double rough){
       //continue;
     }
     else{
-      hcore[core]->GetXaxis()->SetRangeUser(0,5000); //4000 was not enough for 56Co
+      /*if(source==4){ //133Ba
+	hcore[core]->GetXaxis()->SetRangeUser(50,250);
+	TSpectrum *sp1 = new TSpectrum(1,1); //(num of peak , resolution[keV])
+	sp->SetResolution(1);
+	Int_t nfound1 = 0;
+	double thresh1 = 0.5;
+	nfound1 = sp1->Search(hcore[core],1,"nobackground",thresh1);
+	}*/
+      // else{
+	hcore[core]->GetXaxis()->SetRangeUser(0,5000); //4000 was not enough for 56Co
       if(source==2)
 	hcore[core]->GetXaxis()->SetRangeUser(500,5000);
       if(source==4) //133Ba
-	hcore[core]->GetXaxis()->SetRangeUser(50,600);
+	hcore[core]->GetXaxis()->SetRangeUser(250,600);
       TSpectrum *sp = new TSpectrum(npeaks,1); //(num of peak , resolution[keV])
       sp->SetResolution(1);
       Int_t nfound = 0;
-      double thresh = 0.1; //original 0.05
-      if(source ==1)
+      double thresh = 0.05; //original 0.05
+      if(source==1)
 	thresh = 0.5; // to be changed especially for 56Co
       nfound = sp->Search(hcore[core],1,"nobackground",thresh);
+      //nfound = sp->Search(hcore[core],1,"",thresh);
       
       Double_t *xpeaks = sp->GetPositionX();
       //Float_t *ypeaks = sp->GetPositionY();
-      
+      //}
       hfile->cd();
       hcore[core]->Write("",TObject::kOverwrite);
       c->cd(1+core);
@@ -276,6 +289,12 @@ void Calibrate_tk(char* filename, int source, double rough){
       output->SetValue(Form("Ge.%d.Gain",core),cgain[core]);
       output->SetValue(Form("Ge.%d.Offset",core),coffset[core]);
 
+      /*for(Int_t i=0;i<npeaks;++i){
+	outdots->SetValue(en[i],fcore[core][3]);
+	}*/
+      for(Int_t i=0;i<npeaks;++i){
+	fout << en[i] << " " << fitv[core][i] << " " << fitve[core][i] << endl; 
+      }
       hfile->cd();
       gcore[core]->SetName(Form("GraphCore_%d",core));
       gcore[core]->Write("",TObject::kOverwrite);

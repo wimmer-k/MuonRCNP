@@ -73,6 +73,8 @@ private:
   TTree *ftr;
   //! basic diagnostic histogram, difference of subsequent timestamps
   TH1F* fhTSdiff;
+  //! basic diagnostic histogram, difference of subsequent timestamps of PHA and Wave
+  TH1F* fhTSdiff_PHAWave;
   //! basic diagnostic histogram, fragment timestamp as function of event number
   TH2F* fhfragTS;
   //! basic diagnostic histogram, event (last fragment) timestamp as function of event number

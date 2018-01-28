@@ -48,6 +48,10 @@ Histos2: Histos2.cc $(LIB_DIR)/libSeamine.so
 	@echo "Compiling $@"
 	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
 
+HistosSaito: HistosSaito.cc $(LIB_DIR)/libSeamine.so 
+	@echo "Compiling $@"
+	@$(CPP) $(CFLAGS) $(INCLUDES) $< $(LIBS) -o $(BIN_DIR)/$@
+
 $(LIB_DIR)/libSeamine.so: $(LIB_O_FILES) 
 	@echo "Making $@"
 	@$(CPP) $(LFLAGS) -o $@ $^ -lc

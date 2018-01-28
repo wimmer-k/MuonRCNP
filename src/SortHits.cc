@@ -33,6 +33,7 @@ void SortHits::SetRootFile(TFile *out){
   fhTSdiff = new TH1F("hTSdiff","hTSdiff",1000,0,100000);
   fhfragTS = new TH2F("hfragTS","hfragTS",1000,0,1e6,1000,0,1e12);
   fheventTS = new TH2F("heventTS","heventTS",1000,0,1e6,1000,0,1e12);
+  fhTSdiff_PHAWave = new TH1F("hTSdiff_PHAWave","hTSdiff_PHAWave",1000,0,100000);
 }
 bool SortHits::Add(Fragment* addme){
   fhfragTS->Fill(ffragnr,addme->GetTS());
@@ -107,6 +108,11 @@ void SortHits::WriteFragment(Fragment* writeme){
     cout << "writeme TS = " << writeme->GetTS() << " last one in the event " << fevent->GetLastTS() << endl;
   }
   fhTSdiff->Fill(writeme->GetTS() - fevent->GetLastTS());
+  if(writeme->GetID()==1 && fevent->GetLastWaveTS()>0)
+    fhTSdiff_PHAWave->Fill(writeme->GetTS() - fevent->GetLastWaveTS());
+  if(writeme->GetID()==0 && fevent->GetLastPHATS()>0)
+    fhTSdiff_PHAWave->Fill(fevent->GetLastPHATS() - writeme->GetTS());
+    
   if(fevent->GetLastTS() <1){
     if(fvl>0)
       cout << "first fragment in the event"<<endl;
@@ -130,7 +136,7 @@ void SortHits::WriteFragment(Fragment* writeme){
 }
 
 void SortHits::CloseEvent(){
-  if(fvl>0){
+  if(fvl>1){
     cout << __PRETTY_FUNCTION__ << endl;
     fevent->PrintEvent();
   }
@@ -162,6 +168,7 @@ void SortHits::Flush(){
     frootfile->cd();
     ftr->Write("",TObject::kOverwrite);
     fhTSdiff->Write();
+    fhTSdiff_PHAWave->Write();
     fhfragTS->Write();
     fheventTS->Write();
   }

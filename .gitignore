@@ -1,10 +1,11 @@
 .rootrc
+cal/
 common/
 customsettings/
-lib/
-root/
 hist/
+lib/
 plots/
+root/
 scripts/FitWindow/
 scripts/rootlogon.C
 scripts/viewWave_C.d
@@ -16,4 +17,6 @@ scripts/Calibrate*_C_ACLiC_dict_rdict.pcm
 setup
 status
 Histos2.cc
-cal/
+HistosSaito.cc
+run.sh
+defaultset_backup.dat

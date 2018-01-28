@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <map>
 #include "TFile.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -9,6 +10,8 @@
 #include "TLine.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/globaldefs.h"
 #include "/home/daq/work/seamine2018_daq/kathrin/inc/Event.hh"
+
+map<int,int> PLAmap();
 char * ffilename = (char*)"/home/daq/work/seamine2018_daq/kathrin/root/run0011.root";
 //change the filename
 void SetFile(char* filename){
@@ -17,6 +20,14 @@ void SetFile(char* filename){
 //change run number (if standard name is chosen)
 void SetRun(int run){
   ffilename = Form("/home/daq/work/seamine2018_daq/kathrin/root/run%04d.root",run);
+}
+//waits for user input
+void PressEnterToContinue(){
+  int c;
+  printf( "Press ENTER to continue... " );
+  fflush( stdout );
+  do c = getchar(); 
+  while ((c != '\n') && (c != EOF));
 }
 // this function plots the BaF waves (up to "nwaves") (if written to file) that have a valid LED for events starting from "nstart"  
 void ViewBaF(int nstart, double thresh = 200, int nwaves=9){
@@ -53,10 +64,16 @@ void ViewBaF(int nstart, double thresh = 200, int nwaves=9){
     //cout << "event wave length " << evt->GetNWaves() << endl;
     for(int i=0; i<evt->GetNWaves(); i++){
       w = evt->GetWave(i);
-      if(w->GetBoard()!=BAFBOARD)
+      
+      if(w->GetBoard()!=BAFBOARD0 && w->GetBoard()!=BAFBOARD1)
 	continue;
-      int ch = w->GetCh();
-      if(ch<BAFCHSTA || ch >=BAFCHSTA+NBAFS)
+      int ch = -1;
+      if(w->GetBoard()==BAFBOARD0 && (w->GetCh()==BAF0 ||w->GetCh()==BAF1 ||w->GetCh()==BAF2 ||w->GetCh()==BAF3) )
+	ch = w->GetCh();
+      if(w->GetBoard()==BAFBOARD1 && (w->GetCh()==BAF4 ||w->GetCh()==BAF5 ||w->GetCh()==BAF6) )
+	ch = w->GetCh();
+      
+      if(ch==-1)
 	continue;
       if(w->GetLED()<0)
 	continue;
@@ -91,7 +108,7 @@ void ViewBaF(int nstart, double thresh = 200, int nwaves=9){
   c->Modified();
   c->Update();
 }
-// this function plots the RF waves (up to "nwaves") (if written to file) for events starting from "nstart"  
+// this function plots the RF waves (up to "nwaves") (if written to file) for events starting from "nstart" 
 void ViewRF(int nstart, int nwaves=9){
   if(nwaves>16){
     cout << "plot only up to 16 events" << endl;
@@ -126,7 +143,7 @@ void ViewRF(int nstart, int nwaves=9){
     //cout << "event wave length " << evt->GetNWaves() << endl;
     for(int i=0; i<evt->GetNWaves(); i++){
       w = evt->GetWave(i);
-      if(w->GetBoard()!=RFBOARD && w->GetCh()!=RFCH)
+      if(w->GetBoard()!=RFBOARD || w->GetCh()!=RFCH)
 	continue;
       w->Print();
       int data[MAXSAMPLES];
@@ -159,6 +176,176 @@ void ViewRF(int nstart, int nwaves=9){
     if(ctr==nwaves)
       break;
   }//events
+  c->Modified();
+  c->Update();
+}
+// this function plots the Plastic waves for event nevt
+void ViewPlastic(int nevt){
+  TCanvas *c = new TCanvas("c","c",1200,600);
+  c->Divide(2,2);
+  map<int,int> mapPLA  = PLAmap();
+  cout <<"mapping plastics" << endl;
+  for(int i=0;i<5;i++)
+    cout << i << "\t" << mapPLA[i] << endl;
+
+  TFile *f = new TFile(ffilename);
+  TTree* tr = (TTree*)f->Get("tr");
+  Event* evt = new Event();
+  tr->SetBranchAddress("event",&evt);
+  Wave *w;
+  int data[MAXSAMPLES];
+  int x[MAXSAMPLES];
+  vector<TGraph*> gv;
+  bool found = false;
+  for(int n=nevt;n<tr->GetEntries();n++){
+    Int_t status = tr->GetEvent(n);
+    for(int i=0; i<evt->GetNWaves(); i++){
+      w = evt->GetWave(i);
+      if(w->GetBoard()!=PLABOARD)
+	continue;
+      if(w->GetCh()!=PLA0 && w->GetCh()!=PLA1 && w->GetCh()!=PLA2 && w->GetCh()!=PLA3)
+	continue;
+      w->Print();
+      int data[MAXSAMPLES];
+      int x[MAXSAMPLES];
+      TGraph* g;
+      int length = w->GetLength();
+      if(length<1 || w->GetWave().size()<1)
+	continue;
+      if(w->GetLED()<0)
+	continue;
+      found = true;
+      for(int i=0;i<length;i++){
+	x[i] = i;
+	data[i] = (int)w->GetWave()[i];
+	//cout << x[i] << "\t" << data[i] << endl;
+      }
+      c->cd(mapPLA[w->GetCh()]+1);
+      g = new TGraph(length,x,data);
+      g->SetTitle(Form("Plastic[%d] wave event %d, pulse %f, LED %d",mapPLA[w->GetCh()],n,w->GetMaxPH(),w->GetLED()));
+      gv.push_back(g);
+      gv.back()->Draw("AL");
+      gv.back()->GetYaxis()->SetRangeUser(0,17000);
+      TLine *ll = new TLine(w->GetLED(),0,w->GetLED(),17000);
+      ll->SetLineColor(2);
+      ll->Draw();
+    }//event length
+    if(found)
+      break;
+  }//entries
+  c->Modified();
+  c->Update();
+}
+// this function plots the Plastic waves for all events (PressEnterToContinue)
+void ViewPlastic(){
+  TCanvas *c = new TCanvas("c","c",1200,600);
+  c->Divide(2,2);
+  map<int,int> mapPLA  = PLAmap();
+  cout <<"mapping plastics" << endl;
+  for(int i=0;i<5;i++)
+    cout << i << "\t" << mapPLA[i] << endl;
+
+  TFile *f = new TFile(ffilename);
+  TTree* tr = (TTree*)f->Get("tr");
+  Event* evt = new Event();
+  tr->SetBranchAddress("event",&evt);
+  Wave *w;
+  int data[MAXSAMPLES];
+  int x[MAXSAMPLES];
+  vector<TGraph*> gv;
+  bool found = false;
+  for(int n=0;n<tr->GetEntries();n++){
+    Int_t status = tr->GetEvent(n);
+    gv.clear();
+    for(int i=0; i<evt->GetNWaves(); i++){
+      w = evt->GetWave(i);
+      if(w->GetBoard()!=PLABOARD)
+	continue;
+      if(w->GetCh()!=PLA0 && w->GetCh()!=PLA1 && w->GetCh()!=PLA2 && w->GetCh()!=PLA3)
+	continue;
+      w->Print();
+      int data[MAXSAMPLES];
+      int x[MAXSAMPLES];
+      TGraph* g;
+      int length = w->GetLength();
+      if(length<1 || w->GetWave().size()<1)
+	continue;
+      if(w->GetLED()<0)
+	continue;
+      found = true;
+      for(int i=0;i<length;i++){
+	x[i] = i;
+	data[i] = (int)w->GetWave()[i];
+	//cout << x[i] << "\t" << data[i] << endl;
+      }
+	 c->cd(mapPLA[w->GetCh()]+1);
+      g = new TGraph(length,x,data);
+      g->SetTitle(Form("Plastic[%d] wave event %d, pulse %f, LED %d",mapPLA[w->GetCh()],n,w->GetMaxPH(),w->GetLED()));
+      gv.push_back(g);
+      gv.back()->Draw("AL");
+      gv.back()->GetYaxis()->SetRangeUser(0,17000);
+      TLine *ll = new TLine(w->GetLED(),0,w->GetLED(),17000);
+      ll->SetLineColor(2);
+      ll->Draw();
+    }//event length
+    if(found){
+      c->Modified();
+      c->Update();
+      PressEnterToContinue();
+    }
+  }//entries
+}
+// this function plots the board=board channel=chan waves for 100 events 
+void ViewChan(int board, int chan, int run =97){
+  SetRun(run);
+  TCanvas *c = new TCanvas("c","c",1200,600);
+
+  TFile *f = new TFile(ffilename);
+  TTree* tr = (TTree*)f->Get("tr");
+  Event* evt = new Event();
+  tr->SetBranchAddress("event",&evt);
+  Wave *w;
+  int data[MAXSAMPLES];
+  int x[MAXSAMPLES];
+  vector<TGraph*> gv;
+  int ctr =0;
+  for(int n=0;n<tr->GetEntries();n++){
+    Int_t status = tr->GetEvent(n);
+    for(int i=0; i<evt->GetNWaves(); i++){
+      w = evt->GetWave(i);
+      if(w->GetBoard()!=board)
+	continue;
+      if(w->GetCh()!=chan)
+	continue;
+      int length = w->GetLength();
+      if(length<1 || w->GetWave().size()<1)
+	continue;
+      w->Print();
+      int data[MAXSAMPLES];
+      int x[MAXSAMPLES];
+      TGraph* g;
+      // if(w->GetLED()<0)
+      // 	continue;
+      for(int i=0;i<length;i++){
+	x[i] = i;
+	data[i] = (int)w->GetWave()[i];
+	//cout << x[i] << "\t" << data[i] << endl;
+      }
+      c->cd();
+      g = new TGraph(length,x,data);
+      g->SetTitle(Form("board %d, channel %d",board, chan));
+      gv.push_back(g);
+      gv.back()->SetLineColor(ctr%5+1);
+      if(ctr==0){
+	gv.back()->Draw("AL");
+	gv.back()->GetYaxis()->SetRangeUser(0,17000);
+      }
+      gv.back()->Draw("L");
+      ctr++;
+    }//event length
+    if(ctr==100)
+      break;
+  }//entries
   c->Modified();
   c->Update();
 }
@@ -290,5 +477,17 @@ void ViewWave(int n){
     gv.at(i)->GetYaxis()->SetRangeUser(0,17000);
   }
   
+}
+map<int,int> PLAmap(){
+  map<int,int> m;
+  m.insert(make_pair(PLA0,0));
+  m.insert(make_pair(PLA1,1));
+  m.insert(make_pair(PLA2,2));
+  m.insert(make_pair(PLA3,3));
+  // m[PLA0] = 0;
+  // m[PLA1] = 1;
+  // m[PLA2] = 2;
+  // m[PLA3] = 3;
+  return m;
 }
 

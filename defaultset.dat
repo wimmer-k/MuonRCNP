@@ -1,7 +1,7 @@
-Thresholds:		/home/daq/work/seamine2018_daq/kathrin/set/thresholds.dat
-IntegrationWindows:	/home/daq/work/seamine2018_daq/kathrin/set/integrationwindows.dat
-Samples.Baseline:	10
-Ge.0.Gain:                               0.759131
-Ge.0.Offset:                             1.29125
-Ge.1.Gain:                               0.750078
-Ge.1.Offset:                             -0.54655
+Thresholds:             /home/daq/work/seamine2018_daq/kathrin/set/thresholds.dat
+IntegrationWindows:     /home/daq/work/seamine2018_daq/kathrin/set/integrationwindows.dat
+Samples.Baseline:       10
+Ge.0.Gain:                               0.758353
+Ge.0.Offset:                             3.671534
+Ge.1.Gain:                               0.74914
+Ge.1.Offset:                             -0.705431

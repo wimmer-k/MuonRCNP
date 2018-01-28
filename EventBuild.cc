@@ -20,7 +20,7 @@ int main(int argc, char *argv[]){
   int runnr = 0;
   int lastfrag = -1;
   int vl = 0;
-  int memdepth = 1000;
+  int memdepth = 20000;
   int window = 2000;
   char* setfile = NULL;
   int writewave = 1;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
   interface->Add("-r", "run number", &runnr);
   interface->Add("-s", "settings file", &setfile);
   interface->Add("-v", "verbose level", &vl);
-  interface->Add("-w", "write the wave form, 0 never, 1 if LED triggered, 2 always, 3 write fragment only if LED triggered", &writewave);
+  interface->Add("-w", "write the wave form, 0 never, 1 if LED triggered, 2 always, 3 write fragment only if LED triggered (default 1)", &writewave);
   interface->CheckFlags(argc, argv);
 
   if(runnr<1){

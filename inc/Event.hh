@@ -31,6 +31,8 @@ public:
     }
     fphas.clear();
     flastTS  = 0;
+    flastWaveTS  = 0;
+    flastPHATS  = 0;
   }
   //! add a new fragment
   void Add(Fragment* add){
@@ -44,10 +46,12 @@ public:
   //! add a new wave hit
   void AddWave(Wave* add){
     fwaves.push_back(add);
+    flastWaveTS = add->GetTS();
   }
   //! add a new pulse height hit
   void AddPHA(PHA* add){
     fphas.push_back(add);
+    flastPHATS = add->GetTS();
   }
   //! returns all the wave data
   vector <Wave*> GetWaves(){ return fwaves;}
@@ -63,13 +67,21 @@ public:
   //! returns the number of pusle height hits in the event
   unsigned short GetNPHAs(){ return fphas.size();}
 
-  //! returns the last added timestamp
+  //! returns the last added time stamp
   unsigned long long int GetLastTS() { return flastTS;}
+  //! returns the last added time stamp for a Wave
+  unsigned long long int GetLastWaveTS() { return flastWaveTS;}
+  //! returns the last added time stamp for a PHA
+  unsigned long long int GetLastPHATS() { return flastPHATS;}
   //! prints the basic information of the event
   void PrintEvent(){
     cout << "last time stamp added to the event " << flastTS << endl;
     cout << "number of wave forms " << fwaves.size() << endl;
+    for(unsigned short i=0; i<fwaves.size();i++)
+      cout << i <<"\t" << fwaves.at(i)->GetTS() << endl;
     cout << "number of pulse heights " << fphas.size() << endl;
+    for(unsigned short i=0; i<fphas.size();i++)
+      cout << i <<"\t" << fphas.at(i)->GetTS() << endl;
   }
   
 protected:
@@ -77,8 +89,12 @@ protected:
   vector <Wave*> fwaves;
   //! a vector with the pulse height data
   vector <PHA*> fphas;
-  //! the last timestamp that was added to this event
+  //! the last time stamp that was added to this event
   unsigned long long int flastTS;
+  //! the last time stamp of a Wave that was added to this event
+  unsigned long long int flastWaveTS;
+  //! the last time stamp of a PHA that was added to this event
+  unsigned long long int flastPHATS;
 
   /// \cond CLASSIMP
   ClassDef(Event,1);
