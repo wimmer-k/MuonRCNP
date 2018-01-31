@@ -260,14 +260,18 @@ int main(int argc, char *argv[]){
   cout << "Total of " << frags << " data fragments ("<<bytes_read/(1024*1024)<<" MB) read." << endl;
   cout << sort->GetTree()->GetEntries() << " entries written to tree ("<<sort->GetTree()->GetZipBytes()/(1024*1024)<<" MB)"<< endl;
   cout << "First time stamp: " <<  firstTS << ", last time stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*1e-9 << " seconds." << endl;
+
   if(vl>0){
     debugfragTSWave->Write();
     for(int i=0;i<2;i++)
       debugfragTSPHA[i]->Write();
   }
+
   rootout->Close();
   double time_end = get_time();
+
   cout << "Program Run time: " << time_end - time_start << " s." << endl;
   cout << "Unpacked " << frags/(time_end - time_start) << " fragments/s." << endl;
+
   return 1;
 }
