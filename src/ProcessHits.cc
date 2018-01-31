@@ -107,7 +107,7 @@ bool ProcessHits::AnalyzeWave(Wave* wave){
   wave->SetShortIntegral(shortint);
   wave->SetLongIntegral(longint);
 
-  if(fvl>0)
+  if(fvl>1)
     wave->Print();
 
   if(leadingedge < 0)

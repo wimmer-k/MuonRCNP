@@ -16,35 +16,35 @@ void checkPd(int runnr,int from=-50000, int ttoo=50000){
     gPad->SetLogy();
     htd[g]->SetLineColor(1+g);
     if(g==0)
-      htd[g]->Draw();
+      htd[g]->DrawCopy();
     else
-      htd[g]->Draw("same");
+      htd[g]->DrawCopy("same");
 
     hen[g] = hentd[g]->ProjectionY(Form("peak%d",g),htd[g]->FindBin(from),htd[g]->FindBin(ttoo));
     c->cd(2);
     hen[g]->SetLineColor(1+g);
     if(g==0)
-      hen[g]->Draw();
+      hen[g]->DrawCopy();
     else
-      hen[g]->Draw("same");
+      hen[g]->DrawCopy("same");
 
     hbg[g] = hentd[g]->ProjectionY(Form("bgnd%d",g),1,htd[g]->FindBin(from));
     hbg[g]->Add(hentd[g]->ProjectionY(Form("bgnd%d",g),htd[g]->FindBin(ttoo),htd[g]->GetNbinsX()-1));
     c->cd(3);
     hbg[g]->SetLineColor(1+g);
     if(g==0)
-      hbg[g]->Draw();
+      hbg[g]->DrawCopy();
     else
-      hbg[g]->Draw("same");
+      hbg[g]->DrawCopy("same");
 
     hsu[g] = (TH1D*)hen[g]->Clone(Form("subt%d",g));
     hsu[g]->Add(hbg[g],-(ttoo-from)/(from-htd[g]->GetBinLowEdge(0) + htd[g]->GetBinLowEdge(htd[g]->GetNbinsX()-1)+htd[g]->GetBinWidth(1)-ttoo));
     c->cd(4);
     hsu[g]->SetLineColor(1+g);
     if(g==0)
-      hsu[g]->Draw();
+      hsu[g]->DrawCopy();
     else
-      hsu[g]->Draw("same");
+      hsu[g]->DrawCopy("same");
     
   }
   c->cd(1);
@@ -54,5 +54,40 @@ void checkPd(int runnr,int from=-50000, int ttoo=50000){
   for(int g=0;g<2;g++){
     gg[g]->SetLineColor(3);
     gg[g]->Draw();
-  }  
+  }
+  window();
+  hsu[0]->DrawCopy();
+  TFile *fout = new TFile("hist/savecoincs.root","UPDATE");
+  hsu[0]->SetName(Form("sub_r%04d_g0",runnr));
+  hsu[1]->SetName(Form("sub_r%04d_g1",runnr));
+  hsu[0]->Write("",TObject::kOverwrite);
+  hsu[1]->Write("",TObject::kOverwrite);
+  fout->ls();
+  fout->Close();
+}
+void compare(){
+  const int nruns = 5;
+  TFile *f = new TFile("hist/savecoincs.root");
+  TH1F *h[nruns][2];
+  int runs[nruns] = {1032,1033,1034,1035,1036};
+  TCanvas *c = new TCanvas("c","c",900,500);
+  c->Divide(2,1);
+  for(int r=0;r<nruns;r++){
+    h[r][0] = (TH1F*)f->Get(Form("sub_r%04d_g0",runs[r])); 
+    h[r][1] = (TH1F*)f->Get(Form("sub_r%04d_g1",runs[r])); 
+    h[r][0]->SetLineColor(1+r); 
+    h[r][1]->SetLineColor(1+r); 
+    c->cd(1);
+    if(r==0)
+      h[r][0]->Draw();
+    else
+      h[r][0]->Draw("same");
+    c->cd(2);
+    if(r==0)
+      h[r][1]->Draw();
+    else
+      h[r][1]->Draw("same");
+    
+  }
+
 }

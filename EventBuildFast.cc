@@ -22,6 +22,7 @@ int main(int argc, char *argv[]){
   int vl = 0;
   int memdepth = 20000;
   int window = 2000;
+  int phawraps = 0;
   char* setfile = NULL;
   //Read in the command line arguments
   CommandLineInterface* interface = new CommandLineInterface();
@@ -31,6 +32,7 @@ int main(int argc, char *argv[]){
   interface->Add("-r", "run number", &runnr);
   interface->Add("-s", "settings file", &setfile);
   interface->Add("-v", "verbose level", &vl);
+  interface->Add("-g", "add PHA time stamp warps", &phawraps);
   interface->CheckFlags(argc, argv);
 
   if(runnr<1){
@@ -62,11 +64,31 @@ int main(int argc, char *argv[]){
   rawin->read( (char *)&id, sizeof(int) );
   bytes_read += sizeof(int);
   int frags=0;
+
+  TH2F* debugfragTSWave = NULL;
+  TH2F* debugfragTSPHA[2];
+  TH2F* debugevntTSWave = NULL;
+  TH2F* debugevntTSPHA[2];
+  if(vl>0){
+    debugfragTSWave = new TH2F("debugfragTSWave","debugfragTSWave",2000,0,2e5,2200,0,2.2e9);
+    debugevntTSWave = new TH2F("debugevntTSWave","debugevntTSWave",2000,0,2e5,2200,0,2.2e11);
+    for(int i=0;i<2;i++){
+      debugfragTSPHA[i] = new TH2F(Form("debugfragTSPHA_%d",i),Form("debugfragTSPHA_%d",i),2000,0,2e5,2200,0,2.2e9);
+      debugevntTSPHA[i] = new TH2F(Form("debugevntTSPHA_%d",i),Form("debugevntTSPHA_%d",i),2000,0,2e5,2200,0,2.2e11);
+    }
+  }  
   
   unsigned int tswrapsWave = 0;
   unsigned long long int lastTSWave = 0;
+  unsigned long long int firstTSWave = 0;
   unsigned int tswrapsPHA[NGES]={0};
+  for(int i=0; i<NGES; i++){
+    if(phawraps>0){
+      tswrapsPHA[i] = phawraps;
+    }
+  }
   unsigned long long int lastTSchanPHA[NGES]={0};
+  unsigned long long int firstTSPHA[NGES] = {0};
   unsigned long long int firstTS = 0;
   while(!rawin->eof()){
     if(signal_received){
@@ -94,6 +116,8 @@ int main(int argc, char *argv[]){
       int boardNR = header[7];
       int chanNR = header[3];
       if(boardNR==0 && chanNR==0){
+	if(vl>0)
+	  debugfragTSWave->Fill(sort->GetFragNr()+1,TS);
 	//check for time stamp wrapping
 	if(TS < lastTSWave){
 	  //count the number of time stamp wraps
@@ -106,10 +130,14 @@ int main(int argc, char *argv[]){
 	TS += (unsigned long long int)pow(2,31)*tswrapsWave;
 	//convert to ns
 	TS*=(unsigned long long int)WAVETSTICK;
+	if(vl>0)
+	  debugevntTSWave->Fill(sort->GetFragNr()+1,TS);
 	
 	//remember first timestamp
 	if(firstTS ==0)
 	  firstTS = TS;
+	if(firstTSWave ==0)
+	  firstTSWave = TS;
 	//initialyze the wave
 	Wave* wave = new Wave(TS,eventNR,boardNR,chanNR);
 	//add fake LED for Histos
@@ -154,6 +182,8 @@ int main(int argc, char *argv[]){
       bytes_read += sizeof(unsigned short);  
       //Ge 0 in chan 0, Ge 2 in chan 2, because scalers are only available for pairs of channels
       chanNR/=2;
+      if(vl>0)
+	debugfragTSPHA[chanNR]->Fill(sort->GetFragNr()+1,TS);
       //check for time stamp wrapping
       if(TS < lastTSchanPHA[chanNR]){
 	//count the number of time stamp wraps
@@ -166,10 +196,14 @@ int main(int argc, char *argv[]){
       TS += (unsigned long long int)pow(2,31)*tswrapsPHA[chanNR];
       //convert to ns
       TS*=(unsigned long long int)PHATSTICK;
+      if(vl>0)
+	debugevntTSPHA[chanNR]->Fill(sort->GetFragNr()+1,TS);
       
       //remember first timestamp
       if(firstTS ==0)
 	firstTS = TS;
+      if(firstTSPHA[chanNR] ==0)
+	firstTSPHA[chanNR] = TS;
       
       PHA* pha = new PHA(TS,eventNR,boardNR,chanNR);
       pha->SetRaw(rawen);
@@ -202,6 +236,17 @@ int main(int argc, char *argv[]){
   cout << sort->GetTree()->GetEntries() << " entries written to tree ("<<sort->GetTree()->GetZipBytes()/(1024*1024)<<" MB)"<< endl;
   cout << "First time stamp: " <<  firstTS << ", last time stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*1e-9 << " seconds." << endl;
 
+  cout << "------------------------------------" << endl;
+  cout << "Wave " << firstTSWave << "\tGe0 " << firstTSPHA[0] << "\tGe1 " << firstTSPHA[1] <<endl;
+  cout << "------------------------------------" << endl;
+  if(vl>0){
+    debugfragTSWave->Write();
+    debugevntTSWave->Write();
+    for(int i=0;i<2;i++){
+      debugfragTSPHA[i]->Write();
+      debugevntTSPHA[i]->Write();
+    }
+  }
   rootout->Close();
   double time_end = get_time();
   cout << "Program Run time: " << time_end - time_start << " s." << endl;

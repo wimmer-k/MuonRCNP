@@ -74,7 +74,7 @@ bool SortHits::FullList(Fragment* addme){
   return Insert(addme);
 }
 bool SortHits::Insert(Fragment* insertme){
-  if(fvl>0){
+  if(fvl>1){
     cout << __PRETTY_FUNCTION__ << endl;
     cout << "inserted TS = " << insertme->GetTS() << endl;
   }
@@ -99,7 +99,7 @@ void SortHits::PrintList(){
   }
 }
 void SortHits::WriteFragment(Fragment* writeme){
-  if(fvl>0){
+  if(fvl>1){
     cout << __PRETTY_FUNCTION__ << endl;
     cout << "writeme TS = " << writeme->GetTS() << " last one in the event " << fevent->GetLastTS() << endl;
   }
@@ -110,21 +110,21 @@ void SortHits::WriteFragment(Fragment* writeme){
     fhTSdiff_PHAWave->Fill(fevent->GetLastPHATS() - writeme->GetTS());
     
   if(fevent->GetLastTS() <1){
-    if(fvl>0)
+    if(fvl>1)
       cout << "first fragment in the event"<<endl;
     //first fragment
     fevent->Add(writeme);
   }
   // check timestamp difference to fevent
   else if(writeme->GetTS() - fevent->GetLastTS() < fwindow){
-    if(fvl>0)
+    if(fvl>1)
       cout << "inside the window" << endl;
     //inside the event building window, add fragment to event
     fevent->Add(writeme);
   }
   else{
     //close fevent and write
-    if(fvl>0)
+    if(fvl>1)
       cout << "outside the window" << endl;
     CloseEvent();
     fevent->Add(writeme);
@@ -144,7 +144,7 @@ void SortHits::CloseEvent(){
   fevtnr++;
 }
 void SortHits::Flush(){
-  if(fvl>0)
+  if(fvl>1)
     cout << __PRETTY_FUNCTION__ << endl;
   list<Fragment*>::iterator it = flist.begin();
   int ctr = 0;

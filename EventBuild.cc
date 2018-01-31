@@ -65,11 +65,12 @@ int main(int argc, char *argv[]){
   bytes_read += sizeof(int);
   int frags=0;
 
-  //TH2F* debugGefragTS = new TH2F("debugGefragTS","debugGefragTS",1000,0,1e6,1000,0,3e9);
-  TH2F* debugGefragTS[2];
+  TH2F* debugfragTSWave = NULL;
+  TH2F* debugfragTSPHA[2];
   if(vl>0){
+    debugfragTSWave = new TH2F("debugfragTSWave","debugfragTSWave",1000,0,1e6,1000,0,3e9);
     for(int i=0;i<2;i++)
-      debugGefragTS[i] = new TH2F(Form("debugGefragTS_%d",i),Form("debugGefragTS_%d",i),10000,0,1e4,2200,0,2.2e9);
+      debugfragTSPHA[i] = new TH2F(Form("debugfragTSPHA_%d",i),Form("debugfragTSPHA_%d",i),10000,0,1e4,2200,0,2.2e9);
   }
   
   unsigned int tswrapsWave[NWAVEBOARDS]={0};
@@ -117,6 +118,8 @@ int main(int argc, char *argv[]){
 	cout << "\tboard number " << boardNR;
 	cout << "\tchannel " << chanNR << endl;
       }
+      if(vl>0)
+	debugfragTSWave->Fill(sort->GetFragNr()+1,TS);
       //check for time stamp wrapping
       if(TS < lastTSboardWave[boardNR]){
 	if(vl>0)
@@ -204,7 +207,7 @@ int main(int argc, char *argv[]){
       //Ge 0 in chan 0, Ge 2 in chan 2, because scalers are only available for pairs of channels
       chanNR/=2;
       if(vl>0)
-	debugGefragTS[chanNR]->Fill(sort->GetFragNr()+1,TS);
+	debugfragTSPHA[chanNR]->Fill(sort->GetFragNr()+1,TS);
       //check for time stamp wrapping
       if(TS < lastTSchanPHA[chanNR]){
 	if(vl>0)
@@ -258,8 +261,9 @@ int main(int argc, char *argv[]){
   cout << sort->GetTree()->GetEntries() << " entries written to tree ("<<sort->GetTree()->GetZipBytes()/(1024*1024)<<" MB)"<< endl;
   cout << "First time stamp: " <<  firstTS << ", last time stamp: " << sort->GetLastTS() << ", data taking time: " << (sort->GetLastTS() - firstTS)*1e-9 << " seconds." << endl;
   if(vl>0){
+    debugfragTSWave->Write();
     for(int i=0;i<2;i++)
-      debugGefragTS[i]->Write();
+      debugfragTSPHA[i]->Write();
   }
   rootout->Close();
   double time_end = get_time();
